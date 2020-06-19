@@ -7,11 +7,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using WebService.Services;
 using WebService.Models;
+using WebService.Helpers;
 using Microsoft.Extensions.Configuration;
-using Microsoft.IdentityModel.Tokens;
-using System.Text;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
+
+
 
 namespace WebService.Controllers
 {
@@ -19,14 +18,18 @@ namespace WebService.Controllers
     [ApiController]
     public class ApoloHRAController : ControllerBase
     {
-
         IConfiguration _configuration;
+        private LogicToken logicToken; 
 
         public ApoloHRAController(IConfiguration configuration)
         {
             _configuration = configuration;
+            logicToken= new LogicToken(_configuration);
+               
+           
         }
         [HttpGet]
+        [Authorize]
         [Route("echoping")]
         public IActionResult EchoPing()
         {
@@ -36,22 +39,19 @@ namespace WebService.Controllers
 
         [HttpPost]
         [Route("token")]
-        public IActionResult Login()
+        public IActionResult Login([FromBody] Usuario model)
         {
-            //Llamado db
+            //Llamado db de las credencials.. posibles metodos para guardar las credenciales.
             //EsmeraldaContext context = HttpContext.RequestServices.GetService(
             //                           typeof(WebService.Services.EsmeraldaContext)) 
             //                           as EsmeraldaContext;
 
             ActionResult response = Unauthorized();
-            Usuario usuario = new Usuario();
-            usuario.ID = 1;
-            usuario.name="Teste";
-            usuario.email = "xx@xx.cl";
-            var _user = AuthenticateUsuario(usuario);
+            Usuario usuario = model;
+            var _user = logicToken.AuthenticateUsuario(usuario);
             if (User != null)
             {
-                var token = GenerateToken(usuario);
+                var token = logicToken.GenerateToken(usuario);
                 response = Ok(new { token = token }); ;
             }
             //response = context.AddSospecha();
@@ -60,69 +60,6 @@ namespace WebService.Controllers
 
 
 
-        /// <summary>
-        /// Crear el token
-        /// </summary>
-        /// <param name="model"></param>
-        /// <returns></returns>
-        private string GenerateToken(Usuario model)
-        {
-            // CREAMOS EL HEADER //
-            var _symmetricSecurityKey = new SymmetricSecurityKey(
-                    Encoding.UTF8.GetBytes(_configuration["JWT:Key"])
-                );
-            var _signingCredentials = new SigningCredentials(
-                    _symmetricSecurityKey, SecurityAlgorithms.HmacSha256
-                );
-            var _Header = new JwtHeader(_signingCredentials);
-
-            // CREAMOS LOS CLAIMS //
-            var _Claims = new[] {
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                new Claim(JwtRegisteredClaimNames.NameId, model.ID.ToString()),
-                new Claim(JwtRegisteredClaimNames.Email, model.email),
-            };
-
-            // CREAMOS EL PAYLOAD //
-            var _Payload = new JwtPayload(
-                    issuer: _configuration["JWT:Issuer"],
-                    audience: _configuration["JWT:Audience"],
-                    claims: _Claims,
-                    notBefore: DateTime.UtcNow,
-                    // Exipra a la 24 horas.
-                    expires: DateTime.UtcNow.AddHours(24)
-                );
-
-            // GENERAMOS EL TOKEN //
-            var _Token = new JwtSecurityToken(
-                    _Header,
-                    _Payload
-                );
-
-            return new JwtSecurityTokenHandler().WriteToken(_Token).ToString();
-        }
-
-        /// <summary>
-        /// Metodo por el cual se aprueba las credenciales
-        /// </summary>
-        /// <returns></returns>
-        /// 
-        private Usuario AuthenticateUsuario(Usuario Model)
-        {
-            Usuario user = new Usuario();
-            //Buscar en la Base de dato las credenciales, en este caso se usara una sola cuenta.
-            if (Model.email == "xx@xx.cl")
-            {
-                user.ID = Model.ID;
-                user.name = Model.name;
-                user.email = Model.email;
-            }
-            else
-            {
-                user = null;
-            }
-
-            return user;
-        }
+        
     }
 }
