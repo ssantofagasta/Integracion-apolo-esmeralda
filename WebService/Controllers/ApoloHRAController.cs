@@ -99,7 +99,7 @@ namespace WebService.Controllers
                     _Payload
                 );
 
-            return new JwtSecurityTokenHandler().WriteToken(_Token);
+            return new JwtSecurityTokenHandler().WriteToken(_Token).ToString();
         }
 
         /// <summary>
