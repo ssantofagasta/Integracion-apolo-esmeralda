@@ -6,53 +6,21 @@ using WebService.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using MySql.Data.MySqlClient;
+using System.Text;
 
 namespace WebService.Services
 {
     public class EsmeraldaContext : DbContext
     {
-        public string ConnectionString { get; set; }
-        //LLamar el contructor
-        public EsmeraldaContext(string connection)
+        public EsmeraldaContext(DbContextOptions<EsmeraldaContext> options) : base(options)
         {
-            this.ConnectionString = connection;
-        }
-        //Conexión que devuelve la conexíon
-        private MySqlConnection GetConnection()
-        {
-            return new MySqlConnection(ConnectionString);
-        }
-        /// <summary>
-        /// Métodos para agregar sospechas 
-        /// </summary>
-        public Sospecha AddSospecha()
-        {
-            Sospecha sospecha = new Sospecha();
-            using (MySqlConnection conn = GetConnection())
-            {
-                conn.Open();
 
-                MySqlCommand cmd = new MySqlCommand();
-
-                using (var reader = cmd.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        sospecha.ID = 1;
-                        sospecha.age = 23;
-                        //list.Add(new Album()
-                        //{
-                        //    Id = Convert.ToInt32(reader["Id"]),
-                        //    Name = reader["Name"].ToString(),
-                        //    ArtistName = reader["ArtistName"].ToString(),
-                        //    Price = Convert.ToInt32(reader["Price"]),
-                        //    Genre = reader["genre"].ToString()
-                        //});
-                    }
-                }
-            }
-            return sospecha;
         }
+
+        public DbSet<users> users { get; set; }
+        public DbSet<Patients> patients { get; set; }
+        public DbSet<Communes> communes { get; set; }
+        public DbSet<demographics> Demographics { get; set; }
+        public DbSet<Sospecha> suspect_cases { get; set; }
     }
-
 }
