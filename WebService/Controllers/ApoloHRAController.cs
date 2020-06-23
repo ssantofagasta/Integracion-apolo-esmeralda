@@ -62,13 +62,13 @@ namespace WebService.Controllers
                 ActionResult response = Unauthorized();
                 Usuario usuario = model;
                 var _user = logicToken.AuthenticateUsuario(usuario);
-                if (User != null)
+                if (_user != null)
                 {
                     var token = logicToken.GenerateToken(usuario);
                     response = Ok(new { token = token }); ;
                 }
                 //response = context.AddSospecha();
-                return response;
+                return BadRequest("Error.... Intente más tarde."); ;
             }
             catch (Exception)
             {
@@ -388,7 +388,7 @@ namespace WebService.Controllers
         public IActionResult getDemograph([FromBody] string buscador)
         {
             try
-            {
+            {   
 
                 int run = Int32.Parse(buscador);
                 var paciente = _db.patients.Where(c => c.run.Equals(run)).FirstOrDefault();
