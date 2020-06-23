@@ -3,3 +3,6 @@
 ################################################################################
 
 /WebService/.vs/WebService/v16/Server/sqlite3
+/.vs
+/WebService/obj/Debug/netcoreapp3.1
+/WebService/obj/Release/netcoreapp3.1
