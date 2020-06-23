@@ -246,7 +246,7 @@ namespace WebService.Controllers
             try
             {
                 //Buscamos si exite la sospecha 
-                Sospecha _sospecha = _db.suspect_cases.Find(2);
+                Sospecha _sospecha = _db.suspect_cases.Find(sospecha.id);
                 //Sospecha _sospecha = _db.suspect_cases.Where(c => c.id.Equals(sospecha.id)).SingleOrDefault();
 
                 if (_sospecha!=null)
