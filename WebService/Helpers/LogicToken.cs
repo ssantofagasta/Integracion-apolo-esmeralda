@@ -72,7 +72,7 @@ namespace WebService.Helpers
         {
             Usuario user = new Usuario();
             //Buscar en la Base de dato las credenciales, en este caso se usara una sola cuenta.
-            if (Model.email == "xx@xx.cl")
+            if (Model.email.Equals("xx@xx.cl"))
             {
                 user.ID = Model.ID;
                 user.name = Model.name;

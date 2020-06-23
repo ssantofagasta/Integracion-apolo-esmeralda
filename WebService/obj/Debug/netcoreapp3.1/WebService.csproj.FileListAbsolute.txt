@@ -105,3 +105,8 @@ C:\Users\Usuario\source\repos\integracion-hra-apolo-esmeralda\WebService\obj\Deb
 C:\Users\Usuario\source\repos\integracion-hra-apolo-esmeralda\WebService\obj\Debug\netcoreapp3.1\WebService.dll
 C:\Users\Usuario\source\repos\integracion-hra-apolo-esmeralda\WebService\obj\Debug\netcoreapp3.1\WebService.pdb
 C:\Users\Usuario\source\repos\integracion-hra-apolo-esmeralda\WebService\obj\Debug\netcoreapp3.1\WebService.csprojAssemblyReference.cache
+C:\Users\Usuario\source\repos\integracion-hra-apolo-esmeralda\WebService\bin\Debug\netcoreapp3.1\Release\web.config
+C:\Users\Usuario\source\repos\integracion-hra-apolo-esmeralda\WebService\bin\Debug\netcoreapp3.1\Release\appsettings.Development.json
+C:\Users\Usuario\source\repos\integracion-hra-apolo-esmeralda\WebService\bin\Debug\netcoreapp3.1\Release\appsettings.json
+C:\Users\Usuario\source\repos\integracion-hra-apolo-esmeralda\WebService\bin\Debug\netcoreapp3.1\Release\WebService.deps.json
+C:\Users\Usuario\source\repos\integracion-hra-apolo-esmeralda\WebService\bin\Debug\netcoreapp3.1\Release\WebService.runtimeconfig.json
