@@ -170,7 +170,7 @@ namespace WebService.Controllers
             try
             {
                 Communes communes = new Communes();
-                var c = _db.communes.Where(c => c.code_deis.Equals(code_ids)).Select(per => new { per.id, per.name });
+                var c = _db.communes.Where(c => c.code_deis.Equals(code_ids)).Select(per => new { per.id, per.name, per.code_deis });
                 return Ok(c);
             }
             catch (Exception)
