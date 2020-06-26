@@ -9,7 +9,7 @@ namespace WebService.Models
     public class Patients
     {
 		[Key]
-        public Nullable<long> id { get; set; }
+        public long id { get; set; }
 		public Nullable<int> run { get; set; }
 		public string dv { get; set; }
 		public string other_identification { get; set; }
