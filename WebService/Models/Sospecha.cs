@@ -9,9 +9,9 @@ namespace WebService.Models
 {
     public class Sospecha
     {
-        
+
         [Key]
-        public int id { get; set; }
+        public long id { get; set; }
         public int age { get; set; }
         public string gender { get; set; }
         public Nullable<DateTime> sample_at { get; set; }
@@ -20,15 +20,16 @@ namespace WebService.Models
         public string status { get; set; }
         public string run_medic { get; set; }
         public string symptoms { get; set; }
+        public Nullable<DateTime> symptoms_at { get; set; }
         public Nullable<DateTime> reception_at { get; set; }
-        public int receptor_id { get; set; }
+        public long receptor_id { get; set; }
         public Nullable<DateTime> result_ifd_at { get; set; }
         public string result_ifd { get; set; }
         public string subtype { get; set; }
         public Nullable<DateTime> pscr_sars_cov_2_at { get; set; }
         public string pscr_sars_cov_2 { get; set; }
         public string sample_type { get; set; }
-        public int validator_id { get; set; }
+        public long validator_id { get; set; }
         public Nullable<DateTime> sent_isp_at { get; set; }
         public string external_laboratory { get; set; }
         public int paho_flu { get; set; }
@@ -42,14 +43,13 @@ namespace WebService.Models
         public Nullable<DateTime> discharged_at { get; set; }
         public string observation { get; set; }
         public bool discharge_test { get; set; }
-        public int minsal_ws_id { get; set; }
-        public int patient_id { get; set; }
-        public int laboratory_id { get; set; }
-        public int establishment_id { get; set; }
-        public int user_id { get; set; }
+        public long minsal_ws_id { get; set; }
+        public long patient_id { get; set; }
+        public long laboratory_id { get; set; }
+        public long establishment_id { get; set; }
+        public long user_id { get; set; }
         public Nullable<DateTime> updated_at { get; set; }
         public Nullable<DateTime> created_at { get; set; }
         public Nullable<DateTime> deleted_at { get; set; }
     }
-
 }
