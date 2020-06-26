@@ -1,0 +1,107 @@
+﻿apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: integracion-hra-api
+  namespace: cl-dssa-api
+  labels:
+    app: monitor-api
+    tier: backend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: integracion-hra-api
+      tier: backend
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: integracion-hra-api
+        tier: backend
+    spec:
+      restartPolicy: Always
+      containers:
+        - image: "gcr.io/saludantofagasta-proy1/integracion-hra-api:{{tag}}"
+          name: integracion-hra
+          env:
+            - name: DB_SERVER
+              value: /tmp/proxysql.sock
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: monitor
+                  key: user
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: monitor
+                  key: password
+            - name: JWT_Key
+              valueFrom:
+                secretKeyRef:
+                  name: webapi
+                  key: apikey
+            - name: BD_PROTOCOL
+              value: Unix
+          ports:
+            - containerPort: 80
+              name: integracion-hra-api
+          livenessProbe:
+            httpGet:
+              path: "/self"
+              port: 80
+              scheme: "HTTP"
+            initialDelaySeconds: 10
+            periodSeconds:  15
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: "/ready"
+              scheme: "HTTP"
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          volumeMounts:
+            - name: shared-data
+              mountPath: /tmp
+        - image: "gcr.io/saludantofagasta-proy1/proxysql"
+          name: proxysql
+          env:
+            - name: PROXY_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: proxycfg
+                  key: proxypass
+            - name: WRITER_SERVER
+              valueFrom:
+                secretKeyRef:
+                  name: proxycfg
+                  key: writer
+            - name: READER_SERVER
+              valueFrom:
+                secretKeyRef:
+                  name: proxycfg
+                  key: reader
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: monitor
+                  key: user
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: monitor
+                  key: password
+          volumeMounts:
+            - name: proxysql-config
+              mountPath: /etc/proxysql.cnf.env
+              subPath: proxysql.cnf.env
+            - name: shared-data
+              mountPath: /tmp
+      volumes:
+        - name: proxysql-config
+          configMap:
+            name: proxysql-configmap
+        - name: shared-data
+          emptyDir: {}
