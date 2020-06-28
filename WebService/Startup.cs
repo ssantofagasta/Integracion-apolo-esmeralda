@@ -41,7 +41,7 @@ namespace WebService
             services.AddDbContextPool<EsmeraldaContext>(o => o.UseMySql(Configuration.GetConnectionString("DefaultConnection")));
             //Servicio de TOKE
             var key = Encoding.ASCII.GetBytes(Configuration["JWT:Key"]);
-            services.AddAuthentication(x =>
+            /*services.AddAuthentication(x =>
             {
                 x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
                 x.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -56,8 +56,28 @@ namespace WebService
                     ValidateIssuer = false,
                     ValidateAudience = false
                 };
-            });
- 
+            });*/
+
+            // Cambio Solicitado por Javier Mandiola
+            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            .AddJwtBearer(
+                 options =>
+                     options.TokenValidationParameters = new TokenValidationParameters
+                     {
+                         ValidateIssuer = true,
+                         ValidateAudience = true,
+                         ValidateLifetime = true,
+                         ValidateIssuerSigningKey = true,
+                         ValidIssuer = "apolosalud.net",
+                         ValidAudience = "apolosalud.net",
+                         IssuerSigningKey = new SymmetricSecurityKey(
+                             Encoding.UTF8.GetBytes(Configuration["llavePrincipal"])
+                         ),
+                         ClockSkew = TimeSpan.Zero
+                     }
+             );
+
+
             services.AddHealthChecks()
                     .AddCheck("self", () => HealthCheckResult.Healthy())
                     .AddDbContextCheck<EsmeraldaContext>(
@@ -68,6 +88,10 @@ namespace WebService
                              return  await database.CanConnectAsync();
                          }
                      );
+
+            services.AddDbContext<AuthDbContext>(
+                options => options.AddAuthDb(Configuration)
+            );
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
