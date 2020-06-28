@@ -6,11 +6,11 @@ using System.Threading.Tasks;
 
 namespace WebService.Models
 {
-    public class Communes
+    public class credencialApi
     {
         [Key]
-        public Nullable<long> id { get; set; }
-        public string name { get; set; }
-        public string code_deis { get; set; }
+        public int id { get; set; }
+        public string  name { get; set; }
+        public string passwords { get; set; }
     }
 }

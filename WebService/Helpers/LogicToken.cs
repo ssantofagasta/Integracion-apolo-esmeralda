@@ -8,8 +8,7 @@ using WebService.Models;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Microsoft.Extensions.Configuration;
-using Microsoft.IdentityModel.Tokens;
-using System.Text;
+using WebService.Services;
 
 namespace WebService.Helpers
 {
@@ -40,8 +39,8 @@ namespace WebService.Helpers
             // CREAMOS LOS CLAIMS //
             var _Claims = new[] {
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                new Claim(JwtRegisteredClaimNames.NameId, model.ID.ToString()),
-                new Claim(JwtRegisteredClaimNames.Email, model.email),
+                new Claim(JwtRegisteredClaimNames.NameId, model.name.ToString()),
+                new Claim(JwtRegisteredClaimNames.Email, model.password),
             };
 
             // CREAMOS EL PAYLOAD //
@@ -52,7 +51,7 @@ namespace WebService.Helpers
                     notBefore: DateTime.UtcNow,
                     // Exipra a la 30 minutos.
                     expires: DateTime.UtcNow.AddMinutes(30)
-                ) ;
+                );
 
             // GENERAMOS EL TOKEN //
             var _Token = new JwtSecurityToken(
@@ -70,20 +69,32 @@ namespace WebService.Helpers
         /// 
         public Usuario AuthenticateUsuario(Usuario Model)
         {
-            Usuario user = new Usuario();
-            //Buscar en la Base de dato las credenciales, en este caso se usara una sola cuenta.
-            if (Model.email.Equals("xx@xx.cl"))
+            try
             {
-                user.ID = Model.ID;
-                user.name = Model.name;
-                user.email = Model.email;
+                Usuario user = new Usuario();
+                //Buscar en la Base de dato las credenciales, en este caso se usara una sola cuenta. email , password
+                dbSqlConnection connection = new dbSqlConnection();
+
+                var userSqlite = connection.getCredencial(Model.name.ToString(), Model.password.ToString());
+                var respuesta = Convert.ToInt32(userSqlite.Rows[0][0]);
+                if (respuesta == 1)
+                {
+                    user.name = Model.name;
+                    user.password = Model.password;
+                }
+                else
+                {
+                    user = null;
+                }
+
+                return user;
             }
-            else
+            catch (Exception e)
             {
-                user = null;
+
+                throw;
             }
 
-            return user;
         }
     }
 }
