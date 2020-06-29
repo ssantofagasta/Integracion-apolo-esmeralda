@@ -12,8 +12,7 @@ using WebService.Helpers;
 using Microsoft.Extensions.Configuration;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-
-
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 namespace WebService.Controllers
 {
@@ -171,7 +170,7 @@ namespace WebService.Controllers
             try
             {
                 Communes communes = new Communes();
-                var c = _db.communes.Where(c => c.code_deis.Equals(code_ids)).Select(per => new { per.id, per.name, per.code_deis });
+                var c = _db.communes.Where(x => x.code_deis.Equals(code_ids)).Select(per => new { per.id, per.name, per.code_deis });
                 return Ok(c);
             }
             catch (Exception)

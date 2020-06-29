@@ -26,10 +26,9 @@ namespace WebService
     {
         public IConfiguration Configuration { get; set; }
 
-        public Startup()
+        public Startup(IConfiguration configuration)
         {
-            var jsonBD = new ConfigurationBuilder().AddJsonFile("appsettings.json");
-            Configuration = jsonBD.Build() ;
+            this.Configuration = Configuration;
         }
 
         // This method gets called by the runtime. Use this method to add services to the container.
@@ -38,25 +37,12 @@ namespace WebService
             services.AddControllers();
             //Servicio BD
             //services.Add(new ServiceDescriptor(typeof(EsmeraldaContext), new EsmeraldaContext(Configuration.GetConnectionString("DefaultConnection"))));
-            services.AddDbContextPool<EsmeraldaContext>(o => o.UseMySql(Configuration.GetConnectionString("DefaultConnection")));
+            services.AddDbContext<EsmeraldaContext>(
+                options => options.AddAuthDb(Configuration)
+            );
+
             //Servicio de TOKE
             var key = Encoding.ASCII.GetBytes(Configuration["JWT:Key"]);
-            /*services.AddAuthentication(x =>
-            {
-                x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-                x.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-            }).AddJwtBearer(x =>
-            {
-                x.RequireHttpsMetadata = false;
-                x.SaveToken = true;
-                x.TokenValidationParameters = new TokenValidationParameters
-                {
-                    ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(key),
-                    ValidateIssuer = false,
-                    ValidateAudience = false
-                };
-            });*/
 
             // Cambio Solicitado por Javier Mandiola
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -88,10 +74,6 @@ namespace WebService
                              return  await database.CanConnectAsync();
                          }
                      );
-
-            services.AddDbContext<AuthDbContext>(
-                options => options.AddAuthDb(Configuration)
-            );
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
