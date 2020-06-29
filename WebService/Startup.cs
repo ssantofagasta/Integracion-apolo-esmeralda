@@ -2,6 +2,7 @@ using System;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -83,7 +84,7 @@ namespace WebService
             app.UseRouting();
             app.UseCors("CorsPolicy");
             app.UseAuthorization();
-            
+
             app.UseHealthChecks("/self", new HealthCheckOptions {Predicate = r => r.Name.Contains("self")});
             app.UseHealthChecks("/ready", new HealthCheckOptions {Predicate = r => r.Tags.Contains("service")});
             
