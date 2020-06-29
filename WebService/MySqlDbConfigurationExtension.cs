@@ -1,17 +1,17 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using MySql.Data.MySqlClient;
 using Pomelo.EntityFrameworkCore.MySql.Infrastructure;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace WebService
 {
-    public static class AuthDbConfigurationExtension
+    public static class MySqlDbConfigurationExtension
     {
-        public static DbContextOptionsBuilder AddAuthDb(this DbContextOptionsBuilder options, IConfiguration configuration)
+        public static DbContextOptionsBuilder AddMysqlDb(
+            this DbContextOptionsBuilder options,
+            IConfiguration configuration
+        )
         {
             var mysqlDb = new MySqlConnectionStringBuilder();
             mysqlDb.Server = configuration["DB_SERVER"] ?? "localhost";
@@ -33,6 +33,7 @@ namespace WebService
                           .EnableRetryOnFailure();
                 }
             );
+
             return options;
         }
     }
