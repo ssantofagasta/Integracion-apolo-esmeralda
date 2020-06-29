@@ -1,46 +1,35 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
-using WebService.Services;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using WebService.Models;
 using WebService.Models_HRA;
-using WebService.Helpers;
-using Microsoft.Extensions.Configuration;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-
-
+using WebService.Services;
 
 namespace WebService.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("[controller]")]
     [ApiController]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     public class ApoloHRAController : ControllerBase
     {
-        IConfiguration _configuration;
-        private LogicToken logicToken;
+        private readonly ILogger<ApoloHRAController> _logger;
         private readonly EsmeraldaContext _db;
-       
 
-
-        public ApoloHRAController(IConfiguration configuration,EsmeraldaContext db)
+        public ApoloHRAController(ILogger<ApoloHRAController> logger, EsmeraldaContext db)
         {
-            _configuration = configuration;
-            logicToken = new LogicToken(_configuration);
+            _logger = logger;
             _db = db;
-
         }
+
         /// <summary>
         /// 
         /// </summary>
         /// <returns></returns>
         /// Test:"OK"
         [HttpGet]
-        [Authorize]
         [Route("echoping")]
         public IActionResult EchoPing()
         {
@@ -48,40 +37,10 @@ namespace WebService.Controllers
         }
 
         /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="model"></param>
-        /// <returns></returns>
-        /// Test:"OK"
-        [HttpPost]
-        [Route("token")]
-        public IActionResult Login([FromBody] Usuario model)
-        {
-            try
-            {
-                ActionResult response = Unauthorized();
-                Usuario usuario = model;
-                var _user = logicToken.AuthenticateUsuario(usuario);
-                if (_user != null)
-                {
-                    var token = logicToken.GenerateToken(usuario);
-                    response = Ok(new { token = token }); ;
-                }
-                //response = context.AddSospecha();
-                return BadRequest("Error.... Intente más tarde."); ;
-            }
-            catch (Exception)
-            {
-                return BadRequest("Error.... Intente más tarde.");
-            }
-            
-        }
-        /// <summary>
         /// Se Obtiene los datos del usuario logeado.
         /// </summary>
         /// <param name="users"></param>
         /// <returns></returns>
-        /// Test:"OK"
         [HttpPost]
         [Authorize]
         [Route("user")]
@@ -89,20 +48,20 @@ namespace WebService.Controllers
         {
             try
             {
-                var cred = _db.users.Where(a => a.run == users.run).FirstOrDefault();
+                var cred = _db.users.FirstOrDefault(a => a.run == users.run);
                 return Ok(cred);
             }
             catch (Exception e)
             {
+                _logger.LogError(e, "Usuario no encontrado user:{users}", users);
                 return BadRequest("Error.... Intente más tarde." + e);
             }
-           
         }
 
         /// <summary>
         /// Metodo de recuperar la ID de bd EME
         /// </summary>
-        /// <param name="patients"></param>
+        /// <param name="pa"></param>
         /// <returns>patient_id</returns>
         /// Test:"OK"
         [HttpPost]
@@ -112,25 +71,24 @@ namespace WebService.Controllers
         {
             try
             {
-                Patients p = new Patients();
-                if (String.IsNullOrEmpty(pa.run))
-                {
-                    p = _db.patients.Where(a => a.other_identification.Equals(pa.other_Id)).FirstOrDefault();
-                }
+                Patients p;
+                if (string.IsNullOrEmpty(pa.run))
+                    p = _db.patients.FirstOrDefault(a => a.other_identification.Equals(pa.other_Id));
                 else
-                {
-                    p = _db.patients.Where(a => a.run.Equals(int.Parse(pa.run))).FirstOrDefault();
-                }
+                    p = _db.patients.FirstOrDefault(a => a.run.Equals(int.Parse(pa.run)));
 
-                if (p != null) { return Ok(p.id); }
-                else { return Ok(null); }
+                if (p != null)
+                    return Ok(p.id);
+
+                return Ok(null);
             }
             catch (Exception e)
             {
+                _logger.LogError(e, "Paciente no recuperado, paciente:{pa}", pa);
                 return BadRequest("Error.... Intente más tarde." + e);
             }
-            
         }
+
         /// <summary>
         /// Metodo para agregar un paciente.
         /// </summary>
@@ -144,19 +102,18 @@ namespace WebService.Controllers
         {
             try
             {
-                //Revisar Otra vez si esta el paciente..
                 _db.patients.Add(patients);
-                var p =_db.SaveChanges();
-                //Recuperar el dato ID
-                int id = patients.id;
-                return Ok(id);
+                _db.SaveChanges();
+
+                return Ok(patients.id);
             }
             catch (Exception e)
             {
+                _logger.LogError(e, "Paciente no guasrdado, paciente:{patients}", patients);
                 return BadRequest("Error.... Intente más tarde." + " Error:"+ e);
             }
-            
         }
+
         /// <summary>
         /// Método de obtener getComuna 
         /// </summary>
@@ -170,16 +127,17 @@ namespace WebService.Controllers
         {
             try
             {
-                Communes communes = new Communes();
-                var c = _db.communes.Where(c => c.code_deis.Equals(code_ids)).Select(per => new { per.id, per.name });
+                var c = _db.communes.Where(x => x.code_deis.Equals(code_ids))
+                           .Select(per => new {per.id, per.name, per.code_deis});
                 return Ok(c);
             }
-            catch (Exception)
+            catch (Exception e)
             {
+                _logger.LogError(e, "Comuna con error, comuna id:{code_ids}", code_ids);
                 return BadRequest("Error.... Intente más tarde.");
             }
-            
         }
+
         /// <summary>
         /// Metodo de Agregar una demografia
         /// </summary>
@@ -199,6 +157,7 @@ namespace WebService.Controllers
             }
             catch (Exception e)
             {
+                _logger.LogError(e, "Demografico no agregado, demographics:{demographics}", demographics);
                 return BadRequest("Error.....Intente más Tarde"+ e ) ;
             }        
         }
@@ -223,10 +182,11 @@ namespace WebService.Controllers
             }
             catch (Exception e)
             {
-
+                _logger.LogError(e, "Sospecha no agregada, sospecha:{sospecha}", sospecha);
                 return BadRequest("No se guardo correctamente...." + e);
             }
         }
+
         /// <summary>
         /// 
         /// </summary>
@@ -245,26 +205,22 @@ namespace WebService.Controllers
         {
             try
             {
-                //Buscamos si exite la sospecha 
-                Sospecha _sospecha = _db.suspect_cases.Find(2);
-                //Sospecha _sospecha = _db.suspect_cases.Where(c => c.id.Equals(sospecha.id)).SingleOrDefault();
+                var sospechaActualizada = _db.suspect_cases.Find(sospecha.id);
 
-                if (_sospecha!=null)
-                {
-                    //Actualizamos
-                    _sospecha.reception_at = sospecha.reception_at;
-                    _sospecha.receptor_id = sospecha.receptor_id;
-                    _sospecha.laboratory_id = sospecha.laboratory_id;
-                    _db.suspect_cases.Update(_sospecha);
-                    _db.SaveChanges();
-                    return Ok("Se Guardo correctamente...");
-                }
+                if (sospechaActualizada == null) return BadRequest("No se guardo correctamente....");
 
-                return BadRequest("No se guardo correctamente....");
+                sospechaActualizada.reception_at = sospechaActualizada.reception_at;
+                sospechaActualizada.receptor_id = sospechaActualizada.receptor_id;
+                sospechaActualizada.laboratory_id = sospechaActualizada.laboratory_id;
+                sospechaActualizada.updated_at = sospechaActualizada.updated_at;
+
+                _db.SaveChanges();
+
+                return Ok("Se Guardo correctamente...");
             }
             catch (Exception e)
             {
-
+                _logger.LogError(e, "Sospecha no actualizada, sospeche:{sospecha}", sospecha);
                 return BadRequest("No se guardo correctamente....");
             }
         }
@@ -287,30 +243,29 @@ namespace WebService.Controllers
         {
             try
             {
-                //Buscamos si exite la sospecha 
-                var _sospecha = _db.suspect_cases.Find(sospecha.id);
-                if (_sospecha!=null)
-                {
-                    _sospecha.pscr_sars_cov_2_at = sospecha.pscr_sars_cov_2_at;
-                    _sospecha.pscr_sars_cov_2 = sospecha.pscr_sars_cov_2;
-                    _sospecha.validator_id = sospecha.validator_id;
-                    _sospecha.updated_at = sospecha.updated_at;
-                }
+                var sospechaActualizada = _db.suspect_cases.Find(sospecha.id);
+
+                if (sospechaActualizada == null) return NotFound(sospecha);
+
+                sospechaActualizada.pscr_sars_cov_2_at = sospecha.pscr_sars_cov_2_at;
+                sospechaActualizada.pscr_sars_cov_2 = sospecha.pscr_sars_cov_2;
+                sospechaActualizada.validator_id = sospecha.validator_id;
+                sospechaActualizada.updated_at = sospecha.updated_at;
                 
-               //Revisar como funciona.. el update..
                 _db.SaveChanges();
                 return Ok("Exito... se actualizo los resultado..");
             }
-            catch (Exception)
+            catch (Exception e)
             {
+                _logger.LogError(e, "Resultado no actualizado, sospecha:{sospecha}", sospecha);
                 return BadRequest("No se guardo correctamente....");
             }
         }
+
         /// <summary>
         /// Obtener el paciente con una ID 
         /// </summary>
-        /// <param name="sospecha">
-        /// </param>
+        /// <param name="buscador"></param>
         /// <returns>Paciente</returns>
         /// TEST = OK
         [HttpGet]
@@ -320,22 +275,12 @@ namespace WebService.Controllers
         {
             try
             {
-                int run = Convert.ToInt32(buscador);
-                //Si quieres el primero, usar  .singledefault
-                var paciente = _db.patients.Where(c => c.run.Equals(run));
-                if (paciente==null)
-                {
-                    var pacienteOther = _db.patients.Where(c => c.other_identification.Equals(buscador)).SingleOrDefault();
-                    return Ok(pacienteOther);
-                }
-                else
-                {
-                    return Ok(paciente);
-                }
-               
+                var paciente = RecuperarPaciente(buscador);
+                return Ok(paciente);
             }
             catch (Exception e)
             {
+                _logger.LogError(e, "No se puede recuperar paciente:{buscador}", buscador);
                 return BadRequest("No se Encontro Paciente.... problema" + e);
             }     
         }
@@ -343,8 +288,7 @@ namespace WebService.Controllers
         /// <summary>
         /// Obtener el sospechas por el rut o other del paciente 
         /// </summary>
-        /// <param name="sospecha">
-        /// </param>
+        /// <param name="buscador">RUN o DNI del paciente a consultar</param>
         /// <returns>Paciente</returns>
         /// TEST = OK
         [HttpGet]
@@ -354,23 +298,13 @@ namespace WebService.Controllers
         {
             try
             { 
-
-                int run = Int32.Parse(buscador);
-                var paciente = _db.patients.Where(c => c.run.Equals(run)).FirstOrDefault();
-                if (paciente == null)
-                {
-                    var pacienteOther = _db.patients.Where(c => c.other_identification.Equals(buscador)).FirstOrDefault();
-                    var obj  = _db.suspect_cases.Where(c => c.patient_id.Equals(pacienteOther.id));
-                    return Ok(obj);
-                }
-                else
-                {
-                    var obj1 = _db.suspect_cases.Where(c => c.patient_id.Equals(paciente.id));
-                    return Ok(obj1);
-                }
+                var paciente = RecuperarPaciente(buscador);
+                var sospecha = _db.suspect_cases.Where(c => c.patient_id.Equals(paciente.id));
+                return Ok(sospecha);
             }
             catch (Exception e)
             {
+                _logger.LogError(e, "No se pudo recuperar sospecha del paciente:{buscador}", buscador);
                 return BadRequest("No se Encontro sospecha.... problema" + e);
             }
         }
@@ -378,8 +312,7 @@ namespace WebService.Controllers
         /// <summary>
         /// Obtener el Demograph por el rut o other del paciente 
         /// </summary>
-        /// <param name="sospecha">
-        /// </param>
+        /// <param name="buscador"></param>
         /// <returns>Paciente</returns>
         /// TEST = OK
         [HttpGet]
@@ -389,25 +322,27 @@ namespace WebService.Controllers
         {
             try
             {   
-
-                int run = Int32.Parse(buscador);
-                var paciente = _db.patients.Where(c => c.run.Equals(run)).FirstOrDefault();
-                if (paciente == null)
-                {
-                    var pacienteOther = _db.patients.Where(c => c.other_identification.Equals(buscador)).FirstOrDefault();
-                    var obj = _db.Demographics.Where(c => c.patient_id.Equals(pacienteOther.id));
-                    return Ok(obj);
-                }
-                else
-                {
-                    var obj1 = _db.Demographics.Where(c => c.patient_id.Equals(paciente.id));
-                    return Ok(obj1);
-                }
+                var paciente = RecuperarPaciente(buscador);
+                var demographic = _db.Demographics.Where(c => c.patient_id.Equals(paciente.id));
+                return Ok(demographic);
             }
             catch (Exception e)
             {
+                _logger.LogError(e, "No se pudo recuperar demografico del paciente:{buscador}", buscador);
                 return BadRequest("No se Encontro sospecha.... problema" + e);
             }
+        }
+
+        private Patients RecuperarPaciente(string buscador)
+        {
+            var run = int.Parse(buscador);
+            var paciente = _db.patients.FirstOrDefault(c => c.run.Equals(run));
+            if (paciente == null)
+            {
+                paciente = _db.patients.FirstOrDefault(c => c.other_identification.Equals(buscador));
+            }
+
+            return paciente;
         }
     }
 }

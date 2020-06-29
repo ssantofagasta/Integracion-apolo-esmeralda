@@ -1,16 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace WebService.Models
 {
     public class Communes
     {
         [Key]
-        public int id { get; set; }
-        public string  name { get; set; }
+        public long? id { get; set; }
+
+        public string name { get; set; }
         public string code_deis { get; set; }
     }
 }
