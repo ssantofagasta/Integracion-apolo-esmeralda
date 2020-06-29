@@ -83,7 +83,10 @@ namespace WebService
             app.UseRouting();
             app.UseCors("CorsPolicy");
             app.UseAuthorization();
-
+            
+            app.UseHealthChecks("/self", new HealthCheckOptions {Predicate = r => r.Name.Contains("self")});
+            app.UseHealthChecks("/ready", new HealthCheckOptions {Predicate = r => r.Tags.Contains("service")});
+            
             app.UseEndpoints(endpoints => { endpoints.MapControllers(); });
         }
     }

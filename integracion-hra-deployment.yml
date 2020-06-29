@@ -4,7 +4,7 @@ metadata:
   name: integracion-hra-api
   namespace: cl-dssa-api
   labels:
-    app: monitor-api
+    app: integracion-hra-api
     tier: backend
 spec:
   replicas: 3
@@ -37,7 +37,7 @@ spec:
                 secretKeyRef:
                   name: monitor
                   key: password
-            - name: JWT_Key
+            - name: llavePrincipal
               valueFrom:
                 secretKeyRef:
                   name: webapi
@@ -46,7 +46,7 @@ spec:
               value: Unix
           ports:
             - containerPort: 80
-              name: integracion-hra-api
+              name: intgr-hra-api
           livenessProbe:
             httpGet:
               path: "/self"
