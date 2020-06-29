@@ -1,4 +1,5 @@
 using System;
+
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -14,6 +15,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 using WebService.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Pomelo.EntityFrameworkCore.MySql.Infrastructure;
@@ -24,10 +26,9 @@ namespace WebService
     {
         public IConfiguration Configuration { get; set; }
 
-        public Startup()
+        public Startup(IConfiguration configuration)
         {
-            var jsonBD = new ConfigurationBuilder().AddJsonFile("appsettings.json");
-            Configuration = jsonBD.Build() ;
+            this.Configuration = Configuration;
         }
 
         // This method gets called by the runtime. Use this method to add services to the container.
@@ -36,25 +37,43 @@ namespace WebService
             services.AddControllers();
             //Servicio BD
             //services.Add(new ServiceDescriptor(typeof(EsmeraldaContext), new EsmeraldaContext(Configuration.GetConnectionString("DefaultConnection"))));
-            services.AddDbContextPool<EsmeraldaContext>(o => o.UseMySql(Configuration.GetConnectionString("DefaultConnection"))); 
+            services.AddDbContext<EsmeraldaContext>(
+                options => options.AddAuthDb(Configuration)
+            );
+
             //Servicio de TOKE
             var key = Encoding.ASCII.GetBytes(Configuration["JWT:Key"]);
-            services.AddAuthentication(x =>
-            {
-                x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-                x.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-            }).AddJwtBearer(x =>
-            {
-                x.RequireHttpsMetadata = false;
-                x.SaveToken = true;
-                x.TokenValidationParameters = new TokenValidationParameters
-                {
-                    ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(key),
-                    ValidateIssuer = false,
-                    ValidateAudience = false
-                };
-            });
+
+            // Cambio Solicitado por Javier Mandiola
+            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            .AddJwtBearer(
+                 options =>
+                     options.TokenValidationParameters = new TokenValidationParameters
+                     {
+                         ValidateIssuer = true,
+                         ValidateAudience = true,
+                         ValidateLifetime = true,
+                         ValidateIssuerSigningKey = true,
+                         ValidIssuer = "apolosalud.net",
+                         ValidAudience = "apolosalud.net",
+                         IssuerSigningKey = new SymmetricSecurityKey(
+                             Encoding.UTF8.GetBytes(Configuration["llavePrincipal"])
+                         ),
+                         ClockSkew = TimeSpan.Zero
+                     }
+             );
+
+
+            services.AddHealthChecks()
+                    .AddCheck("self", () => HealthCheckResult.Healthy())
+                    .AddDbContextCheck<EsmeraldaContext>(
+                         tags: new[] {"service"},
+                         customTestQuery: async (context, token) =>
+                         {
+                             var database = context.Database;
+                             return  await database.CanConnectAsync();
+                         }
+                     );
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -67,9 +86,9 @@ namespace WebService
 
             app.UseHttpsRedirection();
 
-            app.UseRouting();
-
             app.UseAuthentication();
+
+            app.UseRouting();
 
             app.UseAuthorization();
 

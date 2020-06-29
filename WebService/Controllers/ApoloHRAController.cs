@@ -12,21 +12,19 @@ using WebService.Helpers;
 using Microsoft.Extensions.Configuration;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-
-
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 namespace WebService.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     public class ApoloHRAController : ControllerBase
     {
         IConfiguration _configuration;
         private LogicToken logicToken;
         private readonly EsmeraldaContext _db;
        
-
-
         public ApoloHRAController(IConfiguration configuration,EsmeraldaContext db)
         {
             _configuration = configuration;
@@ -34,13 +32,13 @@ namespace WebService.Controllers
             _db = db;
 
         }
+
         /// <summary>
         /// 
         /// </summary>
         /// <returns></returns>
         /// Test:"OK"
         [HttpGet]
-        [Authorize]
         [Route("echoping")]
         public IActionResult EchoPing()
         {
@@ -65,10 +63,11 @@ namespace WebService.Controllers
                 if (_user != null)
                 {
                     var token = logicToken.GenerateToken(usuario);
-                    response = Ok(new { token = token }); ;
+                    response = Ok(new { token = token });
+                    return response;
                 }
                 //response = context.AddSospecha();
-                return BadRequest("Error.... Intente más tarde."); ;
+                return BadRequest("Revise sus credenciales...."); ;
             }
             catch (Exception)
             {
@@ -89,7 +88,7 @@ namespace WebService.Controllers
         {
             try
             {
-                var cred = _db.users.Where(a => a.run == users.run).FirstOrDefault();
+                users cred = _db.users.Where(a => a.run == users.run).FirstOrDefault();
                 return Ok(cred);
             }
             catch (Exception e)
@@ -148,7 +147,7 @@ namespace WebService.Controllers
                 _db.patients.Add(patients);
                 var p =_db.SaveChanges();
                 //Recuperar el dato ID
-                int id = patients.id;
+                long id = patients.id;
                 return Ok(id);
             }
             catch (Exception e)
@@ -171,7 +170,7 @@ namespace WebService.Controllers
             try
             {
                 Communes communes = new Communes();
-                var c = _db.communes.Where(c => c.code_deis.Equals(code_ids)).Select(per => new { per.id, per.name });
+                var c = _db.communes.Where(x => x.code_deis.Equals(code_ids)).Select(per => new { per.id, per.name, per.code_deis });
                 return Ok(c);
             }
             catch (Exception)
@@ -246,7 +245,7 @@ namespace WebService.Controllers
             try
             {
                 //Buscamos si exite la sospecha 
-                Sospecha _sospecha = _db.suspect_cases.Find(2);
+                Sospecha _sospecha = _db.suspect_cases.Find(sospecha.id);
                 //Sospecha _sospecha = _db.suspect_cases.Where(c => c.id.Equals(sospecha.id)).SingleOrDefault();
 
                 if (_sospecha!=null)
@@ -255,6 +254,7 @@ namespace WebService.Controllers
                     _sospecha.reception_at = sospecha.reception_at;
                     _sospecha.receptor_id = sospecha.receptor_id;
                     _sospecha.laboratory_id = sospecha.laboratory_id;
+                    _sospecha.updated_at = sospecha.updated_at;
                     _db.suspect_cases.Update(_sospecha);
                     _db.SaveChanges();
                     return Ok("Se Guardo correctamente...");

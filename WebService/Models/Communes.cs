@@ -9,8 +9,8 @@ namespace WebService.Models
     public class Communes
     {
         [Key]
-        public int id { get; set; }
-        public string  name { get; set; }
+        public Nullable<long> id { get; set; }
+        public string name { get; set; }
         public string code_deis { get; set; }
     }
 }
