@@ -340,7 +340,7 @@ namespace WebService.Controllers
         /// </param>
         /// <returns>Paciente</returns>
         /// TEST = OK
-        [HttpGet]
+        [HttpPost]
         [Authorize]
         [Route("getSuspectCase")]
         public IActionResult getSuspectCase([FromBody] long idCase)
