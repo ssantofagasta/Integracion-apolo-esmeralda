@@ -20,7 +20,7 @@ namespace WebService.Services
         public DbSet<users> users { get; set; }
         public DbSet<Patients> patients { get; set; }
         public DbSet<Communes> communes { get; set; }
-        public DbSet<demographics> Demographics { get; set; }
+        public DbSet<demographics> demographics { get; set; }
         public DbSet<Sospecha> suspect_cases { get; set; }
     }
 }
