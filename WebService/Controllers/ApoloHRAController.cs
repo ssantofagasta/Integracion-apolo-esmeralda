@@ -151,7 +151,7 @@ namespace WebService.Controllers
         {
             try
             {
-                _db.Demographics.Add(demographics);
+                _db.demographics.Add(demographics);
                 _db.SaveChanges();
                 return Ok("Se Guardo Correctamente la Demografía");
             }
@@ -323,13 +323,57 @@ namespace WebService.Controllers
             try
             {   
                 var paciente = RecuperarPaciente(buscador);
-                var demographic = _db.Demographics.Where(c => c.patient_id.Equals(paciente.id));
+                var demographic = _db.demographics.Where(c => c.patient_id.Equals(paciente.id));
                 return Ok(demographic);
             }
             catch (Exception e)
             {
                 _logger.LogError(e, "No se pudo recuperar demografico del paciente:{buscador}", buscador);
                 return BadRequest("No se Encontro sospecha.... problema" + e);
+            }
+        }
+
+        /// <summary>
+        /// Obtener el sospechas por el rut o other del paciente 
+        /// </summary>
+        /// <param name="sospecha">
+        /// </param>
+        /// <returns>Paciente</returns>
+        /// TEST = OK
+        [HttpGet]
+        [Authorize]
+        [Route("getSuspectCase")]
+        public IActionResult getSuspectCase([FromBody] long idCase)
+        {
+            try
+            {
+                var _case = _db.suspect_cases.FirstOrDefault(x => x.id == idCase);
+                if (_case == null)
+                {
+                    return BadRequest("No existe el caso");
+                }
+                var _patient = _db.patients.FirstOrDefault(x => x.id == _case.patient_id);
+                if (_patient == null)
+                {
+                    return BadRequest("No existe el paciente");
+                }
+                var _demographic = _db.demographics.FirstOrDefault(x => x.patient_id == _patient.id);
+                if (_demographic == null)
+                {
+                    return BadRequest("No existe el demografico");
+                }
+                object retorno = new
+                {
+                    caso = _case,
+                    paciente = _patient,
+                    demografico = _demographic
+                };
+
+                return Ok(retorno);
+            }
+            catch (Exception e)
+            {
+                return BadRequest("Computer system error." + e);
             }
         }
 
