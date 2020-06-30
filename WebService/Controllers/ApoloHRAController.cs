@@ -333,6 +333,50 @@ namespace WebService.Controllers
             }
         }
 
+        /// <summary>
+        /// Obtener el sospechas por el rut o other del paciente 
+        /// </summary>
+        /// <param name="sospecha">
+        /// </param>
+        /// <returns>Paciente</returns>
+        /// TEST = OK
+        [HttpGet]
+        [Authorize]
+        [Route("getSuspectCase")]
+        public IActionResult getSuspectCase([FromBody] long idCase)
+        {
+            try
+            {
+                var _case = _db.suspect_cases.FirstOrDefault(x => x.id == idCase);
+                if (_case == null)
+                {
+                    return BadRequest("No existe el caso");
+                }
+                var _patient = _db.patients.FirstOrDefault(x => x.id == _case.patient_id);
+                if (_patient == null)
+                {
+                    return BadRequest("No existe el paciente");
+                }
+                var _demographic = _db.Demographics.FirstOrDefault(x => x.patient_id == _patient.id);
+                if (_demographic == null)
+                {
+                    return BadRequest("No existe el demografico");
+                }
+                object retorno = new
+                {
+                    caso = _case,
+                    paciente = _patient,
+                    demografico = _demographic
+                };
+
+                return Ok(retorno);
+            }
+            catch (Exception e)
+            {
+                return BadRequest("Computer system error." + e);
+            }
+        }
+
         private Patients RecuperarPaciente(string buscador)
         {
             var run = int.Parse(buscador);
