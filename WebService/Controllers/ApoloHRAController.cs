@@ -192,7 +192,7 @@ namespace WebService.Controllers
         {
             try
             {
-                _db.Demographics.Add(demographics);
+                _db.demographics.Add(demographics);
                 _db.SaveChanges();
                 return Ok("Se Guardo Correctamente la Demografía");
             }
