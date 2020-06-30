@@ -60,6 +60,8 @@ namespace WebService
 
             services.AddControllers();
 
+            services.AddRouting(o => o.LowercaseUrls = true);
+
             services.AddCors(
                 options =>
                 {
