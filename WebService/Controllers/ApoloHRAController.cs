@@ -151,7 +151,7 @@ namespace WebService.Controllers
         {
             try
             {
-                _db.Demographics.Add(demographics);
+                _db.demographics.Add(demographics);
                 _db.SaveChanges();
                 return Ok("Se Guardo Correctamente la Demografía");
             }
@@ -323,7 +323,7 @@ namespace WebService.Controllers
             try
             {   
                 var paciente = RecuperarPaciente(buscador);
-                var demographic = _db.Demographics.Where(c => c.patient_id.Equals(paciente.id));
+                var demographic = _db.demographics.Where(c => c.patient_id.Equals(paciente.id));
                 return Ok(demographic);
             }
             catch (Exception e)
@@ -357,7 +357,7 @@ namespace WebService.Controllers
                 {
                     return BadRequest("No existe el paciente");
                 }
-                var _demographic = _db.Demographics.FirstOrDefault(x => x.patient_id == _patient.id);
+                var _demographic = _db.demographics.FirstOrDefault(x => x.patient_id == _patient.id);
                 if (_demographic == null)
                 {
                     return BadRequest("No existe el demografico");
