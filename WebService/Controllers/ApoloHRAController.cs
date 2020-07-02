@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -209,10 +209,10 @@ namespace WebService.Controllers
 
                 if (sospechaActualizada == null) return BadRequest("No se guardo correctamente....");
 
-                sospechaActualizada.reception_at = sospechaActualizada.reception_at;
-                sospechaActualizada.receptor_id = sospechaActualizada.receptor_id;
-                sospechaActualizada.laboratory_id = sospechaActualizada.laboratory_id;
-                sospechaActualizada.updated_at = sospechaActualizada.updated_at;
+                sospechaActualizada.reception_at = sospecha.reception_at;
+                sospechaActualizada.receptor_id = sospecha.receptor_id;
+                sospechaActualizada.laboratory_id = sospecha.laboratory_id;
+                sospechaActualizada.updated_at = sospecha.updated_at;
 
                 _db.SaveChanges();
 
@@ -323,7 +323,7 @@ namespace WebService.Controllers
             try
             {   
                 var paciente = RecuperarPaciente(buscador);
-                var demographic = _db.Demographics.Where(c => c.patient_id.Equals(paciente.id));
+                var demographic = _db.demographics.Where(c => c.patient_id.Equals(paciente.id));
                 return Ok(demographic);
             }
             catch (Exception e)
@@ -343,6 +343,7 @@ namespace WebService.Controllers
             }
 
             return paciente;
+        }
         /// <summary>
         /// Obtener el sospechas por el rut o other del paciente 
         /// </summary>
@@ -367,7 +368,7 @@ namespace WebService.Controllers
                 {
                     return BadRequest("No existe el paciente");
                 }
-                var _demographic = _db.Demographics.FirstOrDefault(x => x.patient_id == _patient.id);
+                var _demographic = _db.demographics.FirstOrDefault(x => x.patient_id == _patient.id);
                 if (_demographic == null)
                 {
                     return BadRequest("No existe el demografico");
