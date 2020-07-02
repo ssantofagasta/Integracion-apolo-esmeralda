@@ -205,7 +205,7 @@ namespace WebService.Controllers
         {
             try
             {
-                var sospechaActualizada = _db.suspect_cases.Find(sospecha.id);
+                var sospechaActualizada = _db.suspect_cases.FirstOrDefault(x=>x.id == sospecha.id);
 
                 if (sospechaActualizada == null) return BadRequest("No se guardo correctamente....");
 
@@ -243,7 +243,8 @@ namespace WebService.Controllers
         {
             try
             {
-                var sospechaActualizada = _db.suspect_cases.Find(sospecha.id);
+                var sospechaActualizada = _db.suspect_cases.FirstOrDefault(x=>x.id == sospecha.id);
+                //var sospechaActualizada = _db.suspect_cases.Find(sospecha.id);
 
                 if (sospechaActualizada == null) return NotFound(sospecha);
 
@@ -367,7 +368,7 @@ namespace WebService.Controllers
                 {
                     return BadRequest("No existe el paciente");
                 }
-                var _demographic = _db.Demographics.FirstOrDefault(x => x.patient_id == _patient.id);
+                var _demographic = _db.demographics.FirstOrDefault(x => x.patient_id == _patient.id);
                 if (_demographic == null)
                 {
                     return BadRequest("No existe el demografico");
