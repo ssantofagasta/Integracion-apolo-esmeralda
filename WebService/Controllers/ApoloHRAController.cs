@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -209,10 +209,10 @@ namespace WebService.Controllers
 
                 if (sospechaActualizada == null) return BadRequest("No se guardo correctamente....");
 
-                sospechaActualizada.reception_at = sospechaActualizada.reception_at;
-                sospechaActualizada.receptor_id = sospechaActualizada.receptor_id;
-                sospechaActualizada.laboratory_id = sospechaActualizada.laboratory_id;
-                sospechaActualizada.updated_at = sospechaActualizada.updated_at;
+                sospechaActualizada.reception_at = sospecha.reception_at;
+                sospechaActualizada.receptor_id = sospecha.receptor_id;
+                sospechaActualizada.laboratory_id = sospecha.laboratory_id;
+                sospechaActualizada.updated_at = sospecha.updated_at;
 
                 _db.SaveChanges();
 
@@ -333,6 +333,17 @@ namespace WebService.Controllers
             }
         }
 
+        private Patients RecuperarPaciente(string buscador)
+        {
+            var run = int.Parse(buscador);
+            var paciente = _db.patients.FirstOrDefault(c => c.run.Equals(run));
+            if (paciente == null)
+            {
+                paciente = _db.patients.FirstOrDefault(c => c.other_identification.Equals(buscador));
+            }
+
+            return paciente;
+        }
         /// <summary>
         /// Obtener el sospechas por el rut o other del paciente 
         /// </summary>
@@ -375,18 +386,6 @@ namespace WebService.Controllers
             {
                 return BadRequest("Computer system error." + e);
             }
-        }
-
-        private Patients RecuperarPaciente(string buscador)
-        {
-            var run = int.Parse(buscador);
-            var paciente = _db.patients.FirstOrDefault(c => c.run.Equals(run));
-            if (paciente == null)
-            {
-                paciente = _db.patients.FirstOrDefault(c => c.other_identification.Equals(buscador));
-            }
-
-            return paciente;
         }
     }
 }
