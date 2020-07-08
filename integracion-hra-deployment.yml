@@ -22,7 +22,7 @@ spec:
     spec:
       restartPolicy: Always
       containers:
-        - image: "gcr.io/saludantofagasta-proy1/integracion-hra-api:{{tag}}"
+        - image: "gcr.io/saludantofagasta-proy1/integracion-hra-api:248"
           name: integracion-hra
           env:
             - name: DB_SERVER
