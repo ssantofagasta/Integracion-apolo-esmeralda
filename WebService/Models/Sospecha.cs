@@ -30,7 +30,7 @@ namespace WebService.Models
         public string external_laboratory { get; set; }
         public int? paho_flu { get; set; }
         public int? epivigila { get; set; }
-        public bool gestation { get; set; }
+        public bool? gestation { get; set; }
         public int? gestation_week { get; set; }
         public bool? close_contact { get; set; }
         public bool? functionary { get; set; }
