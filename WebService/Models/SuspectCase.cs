@@ -12,7 +12,7 @@ namespace WebService.Models
         public DateTime? sample_at { get; set; }
         public int? epidemiological_week { get; set; }
         public string run_medic { get; set; }
-        public bool symptoms { get; set; }
+        public bool? symptoms { get; set; }
         public DateTime? symptoms_at { get; set; }
         public DateTime? reception_at { get; set; }
         public long? receptor_id { get; set; }
