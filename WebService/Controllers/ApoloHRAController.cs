@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using WebService.Models;
 using WebService.Models_HRA;
+using WebService.Request;
 using WebService.Services;
 
 namespace WebService.Controllers
@@ -175,10 +176,31 @@ namespace WebService.Controllers
         {
             try
             {
-                _db.suspect_cases.Add(sospecha);
-                _db.SaveChanges();
-                return Ok(sospecha.id);
+                var suspectCase = new SuspectCase
+                {
+                    age = sospecha.age,
+                    gender = sospecha.gender,
+                    sample_at = sospecha.sample_at,
+                    epidemiological_week = sospecha.epidemiological_week,
+                    run_medic = sospecha.run_medic,
+                    symptoms = sospecha.symptoms == "Si",
+                    pcr_sars_cov_2 = sospecha.pscr_sars_cov_2,
+                    sample_type = sospecha.sample_type,
+                    epivigila = sospecha.epivigila,
+                    gestation = sospecha.gestation,
+                    gestation_week = sospecha.gestation_week,
+                    close_contact = sospecha.close_contact,
+                    functionary = sospecha.functionary,
+                    patient_id = sospecha.patient_id,
+                    establishment_id = sospecha.establishment_id,
+                    user_id = sospecha.user_id,
+                    created_at = sospecha.created_at,
+                    updated_at = sospecha.updated_at
+                };
 
+                _db.suspect_cases.Add(suspectCase);
+                _db.SaveChanges();
+                return Ok(suspectCase.id);
             }
             catch (Exception e)
             {
@@ -247,8 +269,8 @@ namespace WebService.Controllers
 
                 if (sospechaActualizada == null) return NotFound(sospecha);
 
-                sospechaActualizada.pscr_sars_cov_2_at = sospecha.pscr_sars_cov_2_at;
-                sospechaActualizada.pscr_sars_cov_2 = sospecha.pscr_sars_cov_2;
+                sospechaActualizada.pcr_sars_cov_2_at = sospecha.pscr_sars_cov_2_at;
+                sospechaActualizada.pcr_sars_cov_2 = sospecha.pscr_sars_cov_2;
                 sospechaActualizada.validator_id = sospecha.validator_id;
                 sospechaActualizada.updated_at = sospecha.updated_at;
                 
@@ -299,7 +321,34 @@ namespace WebService.Controllers
             try
             { 
                 var paciente = RecuperarPaciente(buscador);
-                var sospecha = _db.suspect_cases.Where(c => c.patient_id.Equals(paciente.id));
+                var sospecha = _db.suspect_cases.Where(c => c.patient_id.Equals(paciente.id))
+                                  .Select(
+                                       s => new Sospecha
+                                       {
+                                           id = s.id,
+                                           age = s.age,
+                                           gender = s.gender,
+                                           sample_at = s.sample_at,
+                                           epidemiological_week = s.epidemiological_week,
+                                           run_medic = s.run_medic,
+                                           symptoms = s.symptoms? "Si": "No",
+                                           pscr_sars_cov_2 = s.pcr_sars_cov_2,
+                                           pscr_sars_cov_2_at = s.pcr_sars_cov_2_at,
+                                           sample_type = s.sample_type,
+                                           epivigila = s.epivigila,
+                                           gestation = s.gestation,
+                                           gestation_week = s.gestation_week,
+                                           close_contact = s.close_contact,
+                                           functionary = s.functionary,
+                                           patient_id = s.patient_id,
+                                           establishment_id = s.establishment_id,
+                                           user_id = s.user_id,
+                                           created_at = s.created_at,
+                                           updated_at = s.updated_at,
+                                           symptoms_at = s.symptoms_at,
+                                           observation = s.observation
+                                       }
+                                   );
                 return Ok(sospecha);
             }
             catch (Exception e)
@@ -347,7 +396,7 @@ namespace WebService.Controllers
         /// <summary>
         /// Obtener el sospechas por el rut o other del paciente 
         /// </summary>
-        /// <param name="sospecha">
+        /// <param name="idCase">
         /// </param>
         /// <returns>Paciente</returns>
         /// TEST = OK
@@ -358,26 +407,38 @@ namespace WebService.Controllers
         {
             try
             {
-                var _case = _db.suspect_cases.FirstOrDefault(x => x.id == idCase);
-                if (_case == null)
+                var caso = _db.suspect_cases.FirstOrDefault(x => x.id == idCase);
+                if (caso == null)
                 {
                     return BadRequest("No existe el caso");
                 }
-                var _patient = _db.patients.FirstOrDefault(x => x.id == _case.patient_id);
-                if (_patient == null)
+                var patient = _db.patients.FirstOrDefault(x => x.id == caso.patient_id);
+                if (patient == null)
                 {
                     return BadRequest("No existe el paciente");
                 }
-                var _demographic = _db.demographics.FirstOrDefault(x => x.patient_id == _patient.id);
-                if (_demographic == null)
+                var demographic = _db.demographics.FirstOrDefault(x => x.patient_id == patient.id);
+                if (demographic == null)
                 {
                     return BadRequest("No existe el demografico");
                 }
                 object retorno = new
                 {
-                    caso = _case,
-                    paciente = _patient,
-                    demografico = _demographic
+                    caso = new Sospecha
+                    {
+                        id = caso.id,
+                        sample_at = caso.sample_at,
+                        run_medic = caso.run_medic,
+                        symptoms = caso.symptoms?"Si":"No",
+                        symptoms_at = caso.symptoms_at,
+                        sample_type = caso.sample_type,
+                        epivigila = caso.epivigila,
+                        gestation = caso.gestation,
+                        gestation_week = caso.gestation_week,
+                        observation = caso.observation
+                    },
+                    paciente = patient,
+                    demografico = demographic
                 };
 
                 return Ok(retorno);
