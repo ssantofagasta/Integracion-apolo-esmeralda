@@ -1,13 +1,11 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
 
-namespace WebService.Models
+namespace WebService.Request
 {
     public class Sospecha
     {
-        [Key]
         public long? id { get; set; }
-
         public int? age { get; set; }
         public string gender { get; set; }
         public DateTime? sample_at { get; set; }
