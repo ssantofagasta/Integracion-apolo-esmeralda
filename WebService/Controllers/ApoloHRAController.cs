@@ -26,10 +26,9 @@ namespace WebService.Controllers
         }
 
         /// <summary>
-        /// 
+        /// Usado para verificar que el servicio responde al llamado.
         /// </summary>
-        /// <returns></returns>
-        /// Test:"OK"
+        /// <returns>Devuelve un valor verdadero si el servicio responde</returns>
         [HttpGet]
         [Route("echoping")]
         public IActionResult EchoPing()
@@ -38,14 +37,15 @@ namespace WebService.Controllers
         }
 
         /// <summary>
-        /// Se Obtiene los datos del usuario logeado.
+        /// Recupera el usuario dentro del monitor que es responsable de la
+        /// creación del muestra y por ende del caso de sospecha
         /// </summary>
-        /// <param name="users"></param>
+        /// <param name="users">Una estructura que representa al usuario dentro del sistema</param>
         /// <returns></returns>
         [HttpPost]
         [Authorize]
         [Route("user")]
-        public IActionResult getUser([FromBody] users users)
+        public ActionResult<users> GetUser([FromBody] users users)
         {
             try
             {
@@ -60,15 +60,20 @@ namespace WebService.Controllers
         }
 
         /// <summary>
-        /// Metodo de recuperar la ID de bd EME
+        /// Recupera el identificador interno que tiene un paciente
+        /// asociado dentro del monitor esmeralda.
         /// </summary>
-        /// <param name="pa"></param>
-        /// <returns>patient_id</returns>
+        /// <remarks>
+        /// La busqueda se realiza por el run del paciente o por otro identificador, el cual
+        /// puede ser un pasaporte u otra identificación.
+        /// </remarks>
+        /// <param name="pa">Estructura con el identificador del paciente</param>
+        /// <returns>Un numero interno con el identficador interno, en caso de no encontrar devuelve un nulo</returns>
         /// Test:"OK"
         [HttpPost]
         [Authorize]
         [Route("getPatient_ID")]
-        public IActionResult getPatient_ID([FromBody] PacienteHRA pa)
+        public IActionResult GetPatientId([FromBody] PacienteHRA pa)
         {
             try
             {
@@ -78,10 +83,7 @@ namespace WebService.Controllers
                 else
                     p = _db.patients.FirstOrDefault(a => a.run.Equals(int.Parse(pa.run)));
 
-                if (p != null)
-                    return Ok(p.id);
-
-                return Ok(null);
+                return p != null? Ok(p.id): Ok(null);
             }
             catch (Exception e)
             {
@@ -91,15 +93,15 @@ namespace WebService.Controllers
         }
 
         /// <summary>
-        /// Metodo para agregar un paciente.
+        /// Agrega paciente inexistente en el monitor esmeralda
         /// </summary>
-        /// <param name="patients"></param>
-        /// <returns></returns>
-        /// Test ="OK"
+        /// <param name="patients">Datos del paciente que serán ingresados</param>
+        /// <returns>
+        /// </returns>
         [HttpPost]
         [Authorize]
         [Route("AddPatients")]
-        public IActionResult addPatients([FromBody] Patients patients)
+        public IActionResult AddPatients([FromBody] Patients patients)
         {
             try
             {
@@ -116,39 +118,37 @@ namespace WebService.Controllers
         }
 
         /// <summary>
-        /// Método de obtener getComuna 
+        /// Recupera el identificador interno de la comuna dado el código DEIS del MINSAL.
         /// </summary>
-        /// <param name="code_ids"></param>
+        /// <param name="codeIds">Código DEIS del establecimiento.</param>
         /// <returns>Obj Comuna con atributo id y name</returns>
-        /// Teste = "OK"
         [HttpPost]
         [Authorize]
         [Route("getComuna")]
-        public IActionResult getComuna([FromBody] string code_ids)
+        public IActionResult GetComuna([FromBody] string codeIds)
         {
             try
             {
-                var c = _db.communes.Where(x => x.code_deis.Equals(code_ids))
+                var c = _db.communes.Where(x => x.code_deis.Equals(codeIds))
                            .Select(per => new {per.id, per.name, per.code_deis});
                 return Ok(c);
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Comuna con error, comuna id:{code_ids}", code_ids);
+                _logger.LogError(e, "Comuna con error, comuna id:{code_ids}", codeIds);
                 return BadRequest("Error.... Intente más tarde.");
             }
         }
 
         /// <summary>
-        /// Metodo de Agregar una demografia
+        /// Agrega los datos demográficos del paciente, tales como la dirección, comuna, teléfono, etc.
         /// </summary>
-        /// <param name="demographics"></param>
+        /// <param name="demographics">Datos demográficos del paciente</param>
         /// <returns></returns>
-        /// Test = OK
         [HttpPost]
         [Authorize]
         [Route("AddDemograph")]
-        public IActionResult addDemograph([FromBody] demographics demographics)
+        public IActionResult AddDemograph([FromBody] demographics demographics)
         {
             try
             {
@@ -164,15 +164,14 @@ namespace WebService.Controllers
         }
 
         /// <summary>
-        /// Método donde se agrega .
+        /// Agrega una nueva sospecha de COVID al monitor esmeralda
         /// </summary>
-        /// <param name="sospecha">json de la sospecha</param>
+        /// <param name="sospecha">Información que es necesaria para la creación de la sospecha</param>
         /// <returns></returns>
-        /// TESTE = OK 
         [HttpPost]
         [Authorize]
         [Route("addSospecha")]
-        public IActionResult addSospecha([FromBody] Sospecha sospecha)
+        public IActionResult AddSospecha([FromBody] Sospecha sospecha)
         {
             try
             {
@@ -210,20 +209,23 @@ namespace WebService.Controllers
         }
 
         /// <summary>
-        /// 
+        /// Informa la recepción de la muestra por parte del laboratorio de
+        /// la muestra que está asociada a la sospecha
         /// </summary>
-        /// <param name="sospecha">
-        /// ID
-        /// reception_at
-        /// receptor_id
-        /// laboratory_id
-        /// </param>
+        /// <remarks>
+        /// Los valores necesarios que se debe informar son:
+        ///   - id: Identificador de la sospecha
+        ///   - reception_at: fecha y hora que se recibió la sospecha en formato estándar ISO 8601 
+        ///   - receptor_id: identificador del usuario que recepcionó la muestra, esté usuario debe estar registrado en
+        ///   el monitor esmeralda.
+        ///   - laboratory_id: Identificador del laboratorio que recepcionó la muestra.
+        /// </remarks>
+        /// <param name="sospecha">Datos de la recepción de la muestra</param>
         /// <returns></returns>
-        /// Test = OK
         [HttpPost]
         [Authorize]
         [Route("recepcionMuestra")]
-        public IActionResult udpateSospecha([FromBody] Sospecha sospecha)
+        public IActionResult UdpateSospecha([FromBody] Sospecha sospecha)
         {
             try
             {
@@ -248,20 +250,23 @@ namespace WebService.Controllers
         }
 
         /// <summary>
-        /// Update 
+        /// Informa la entrega del resultado de la muestra al caso de sospecha
         /// </summary>
-        /// <param name="sospecha">
-        ///     pscr_sars_cov_2_at
-        ///     pscr_sars_cov_2
-        ///     validator_id
-        ///     updated_at
-        /// </param>
+        /// <remarks>
+        /// Los valores necesarios que se debe informar son:
+        ///   - id: identificador de la sospecha
+        ///   - pscr_sars_cov_2_at: fecha hora en que se obtuvo el resultado en formato estándar ISO 8601
+        ///   - pscr_sars_cov_2: resultado de la muestra.
+        ///   - validator_id: identificador del responsable en la validación de la muestra, usuario que debe estar registrado en el monitor esmeralda.
+        ///   - update_at: fecha de actualización del caso de sospecha en formato estándar ISO 8601
+        /// </remarks>
+        /// <param name="sospecha">Datos de la entrega del resultado</param>
         /// <returns></returns>
         /// 
         [HttpPost]
         [Authorize]
         [Route("resultado")]
-        public IActionResult udpateResultado([FromBody] Sospecha sospecha)
+        public IActionResult UdpateResultado([FromBody] Sospecha sospecha)
         {
             try
             {
@@ -285,15 +290,14 @@ namespace WebService.Controllers
         }
 
         /// <summary>
-        /// Obtener el paciente con una ID 
+        /// Recupera el paciente dado un run u otro identificador
         /// </summary>
-        /// <param name="buscador"></param>
+        /// <param name="buscador">RUN u otro identificador</param>
         /// <returns>Paciente</returns>
-        /// TEST = OK
         [HttpGet]
         [Authorize]
         [Route("getPatients")]
-        public IActionResult getPatients([FromBody] string buscador) 
+        public IActionResult GetPatients([FromBody] string buscador) 
         {
             try
             {
@@ -308,15 +312,15 @@ namespace WebService.Controllers
         }
 
         /// <summary>
-        /// Obtener el sospechas por el rut o other del paciente 
+        /// Recupera los casos de sospecha que tiene asociado un paciente de acuerdo
+        /// a su RUN u otro documento de identificación como pasaporte.
         /// </summary>
         /// <param name="buscador">RUN o DNI del paciente a consultar</param>
-        /// <returns>Paciente</returns>
-        /// TEST = OK
+        /// <returns>Un listado con los casos de sospecha que el paciente tiene</returns>
         [HttpGet]
         [Authorize]
         [Route("getSospecha")]
-        public IActionResult getSospeha([FromBody] string buscador)
+        public IActionResult GetSospeha([FromBody] string buscador)
         {
             try
             { 
@@ -348,7 +352,7 @@ namespace WebService.Controllers
                                            symptoms_at = s.symptoms_at,
                                            observation = s.observation
                                        }
-                                   );
+                                   ).ToList();
                 return Ok(sospecha);
             }
             catch (Exception e)
@@ -359,15 +363,14 @@ namespace WebService.Controllers
         }
 
         /// <summary>
-        /// Obtener el Demograph por el rut o other del paciente 
+        /// Recupera los datos demográficos del paciente
         /// </summary>
-        /// <param name="buscador"></param>
+        /// <param name="buscador">RUN u otro identificador del paciente</param>
         /// <returns>Paciente</returns>
-        /// TEST = OK
         [HttpGet]
         [Authorize]
         [Route("getDemograph")]
-        public IActionResult getDemograph([FromBody] string buscador)
+        public IActionResult GetDemograph([FromBody] string buscador)
         {
             try
             {   
@@ -394,16 +397,13 @@ namespace WebService.Controllers
             return paciente;
         }
         /// <summary>
-        /// Obtener el sospechas por el rut o other del paciente 
+        /// Recupera el caso de sospecha dado el identificador del mismo
         /// </summary>
-        /// <param name="idCase">
-        /// </param>
-        /// <returns>Paciente</returns>
-        /// TEST = OK
+        /// <param name="idCase">Identificador del caso</param>
         [HttpPost]
         [Authorize]
         [Route("getSuspectCase")]
-        public IActionResult getSuspectCase([FromBody] long idCase)
+        public IActionResult GetSuspectCase([FromBody] long idCase)
         {
             try
             {
