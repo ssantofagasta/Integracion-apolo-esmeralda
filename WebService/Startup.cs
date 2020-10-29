@@ -85,12 +85,26 @@ namespace WebService
                     c.AddSecurityDefinition("bearer", new OpenApiSecurityScheme
                     {
                         Description = "Encabezado de autorización estándar usando el esquema bearer. Ejemplo: \"bearer {token}\"",
+                        Name = "Authorization",
                         In = ParameterLocation.Header,
                         BearerFormat = "JWT",
-                        Type = SecuritySchemeType.Http,
-                        Scheme = "bearer"
+                        Type = SecuritySchemeType.ApiKey,
+                        Scheme = "Bearer"
                     });
-                    c.OperationFilter<SecurityRequirementsOperationFilter>();
+                    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+                    {
+                        {
+                            new OpenApiSecurityScheme
+                            {
+                                Reference = new OpenApiReference
+                                {
+                                    Type = ReferenceType.SecurityScheme,
+                                    Id = "Bearer"
+                                }
+                            },
+                            new string[]{}
+                        }
+                    });
                     c.SwaggerDoc("v1", new OpenApiInfo {Title = "Monitor Esmeralda Api", Version = "v1"});
                     var docXml = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
                     var pathHelp = Path.Combine(AppContext.BaseDirectory, docXml);
