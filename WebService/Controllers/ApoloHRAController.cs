@@ -1,7 +1,9 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using WebService.Models;
@@ -11,6 +13,9 @@ using WebService.Services;
 
 namespace WebService.Controllers
 {
+    /// <summary>
+    /// 
+    /// </summary>
     [Route("[controller]")]
     [ApiController]
     [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
@@ -19,6 +24,11 @@ namespace WebService.Controllers
         private readonly ILogger<ApoloHRAController> _logger;
         private readonly EsmeraldaContext _db;
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="logger"></param>
+        /// <param name="db"></param>
         public ApoloHRAController(ILogger<ApoloHRAController> logger, EsmeraldaContext db)
         {
             _logger = logger;
@@ -26,26 +36,40 @@ namespace WebService.Controllers
         }
 
         /// <summary>
-        /// 
+        /// Usado para verificar que el servicio responde al llamado.
         /// </summary>
-        /// <returns></returns>
-        /// Test:"OK"
+        /// <returns>Devuelve un valor verdadero si el servicio responde</returns>
         [HttpGet]
         [Route("echoping")]
-        public IActionResult EchoPing()
+        public ActionResult<bool> EchoPing()
         {
             return Ok(true);
         }
 
         /// <summary>
-        /// Se Obtiene los datos del usuario logeado.
+        /// Recupera un usuario existente en el monitor 
         /// </summary>
+        /// <remarks>
+        /// Recupera un usuario del monitor dado el RUN
+        /// 
+        /// Solicitud de ejemplo:
+        /// 
+        ///     POST /apolohra/user
+        ///     {
+        ///       "run": 12345678
+        ///     }
+        /// 
+        /// </remarks>
         /// <param name="users"></param>
         /// <returns></returns>
+        /// <response code="200">Devuelve la información del usuario</response>
+        /// <response code="400">Mensaje descriptivo del error</response>
         [HttpPost]
         [Authorize]
         [Route("user")]
-        public IActionResult getUser([FromBody] users users)
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(users))]
+        [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(string))]
+        public IActionResult GetUser([FromBody] users users)
         {
             try
             {
@@ -60,15 +84,29 @@ namespace WebService.Controllers
         }
 
         /// <summary>
-        /// Metodo de recuperar la ID de bd EME
+        /// Recupera el identificador interno de un paciente en el monitor esmeralda.
         /// </summary>
-        /// <param name="pa"></param>
-        /// <returns>patient_id</returns>
-        /// Test:"OK"
+        /// <remarks>
+        /// La búsqueda se realiza por el run del paciente o por otro identificador.
+        ///
+        /// Solicitudes de ejemplo:
+        ///
+        ///     POST /apolohra/getpatient_id
+        ///     {
+        ///         "run": "12838526"
+        ///     }
+        /// 
+        /// </remarks>
+        /// <param name="pa">Estructura con el identificador del paciente</param>
+        /// <returns>El identficador interno, en caso de no encontrar devuelve un nulo</returns>
+        /// <response code="200">Identificador interno del paciente en el monitor</response>
+        /// <response code="400">Mensaje descriptivo del error</response>
         [HttpPost]
         [Authorize]
         [Route("getPatient_ID")]
-        public IActionResult getPatient_ID([FromBody] PacienteHRA pa)
+        [ProducesResponseType(typeof(int?),StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
+        public IActionResult GetPatientId([FromBody] PacienteHRA pa)
         {
             try
             {
@@ -78,10 +116,7 @@ namespace WebService.Controllers
                 else
                     p = _db.patients.FirstOrDefault(a => a.run.Equals(int.Parse(pa.run)));
 
-                if (p != null)
-                    return Ok(p.id);
-
-                return Ok(null);
+                return p != null? Ok(p.id): Ok(null);
             }
             catch (Exception e)
             {
@@ -91,15 +126,38 @@ namespace WebService.Controllers
         }
 
         /// <summary>
-        /// Metodo para agregar un paciente.
+        /// Agrega paciente inexistente en el monitor esmeralda
         /// </summary>
-        /// <param name="patients"></param>
-        /// <returns></returns>
-        /// Test ="OK"
+        /// <remarks>
+        /// Ejemplo de solicitud:
+        ///
+        ///     POST /apolohra/addpatients
+        ///     {
+        ///         "run": 11111111,
+        ///         "dv": "1",
+        ///         "name": "Javier Andrés",
+        ///         "fathers_family": "Mandiola",
+        ///         "mothers_family": "Ovalle",
+        ///         "gender": "male",
+        ///         "birthday": "1975-04-03",
+        ///         "status": "",
+        ///         "created_at": "2020-10-28T12:00:00"
+        ///         "updated_at": "2020-10-28T12:00:00"
+        ///     }
+        ///  
+        /// </remarks>
+        /// <param name="patients">Datos del paciente que serán ingresados</param>
+        /// <returns>
+        /// Identificador interno del paciente creado
+        /// </returns>
+        /// <response code="200">El identificador interno del paciente creado</response>
+        /// <response code="400">Mensaje detallado del error</response>
         [HttpPost]
         [Authorize]
         [Route("AddPatients")]
-        public IActionResult addPatients([FromBody] Patients patients)
+        [ProducesResponseType(typeof(int?),StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string),StatusCodes.Status400BadRequest)]
+        public IActionResult AddPatients([FromBody] Patients patients)
         {
             try
             {
@@ -116,39 +174,77 @@ namespace WebService.Controllers
         }
 
         /// <summary>
-        /// Método de obtener getComuna 
+        /// Recupera la comuna indicando el código DEIS del MINSAL.
         /// </summary>
-        /// <param name="code_ids"></param>
-        /// <returns>Obj Comuna con atributo id y name</returns>
-        /// Teste = "OK"
+        /// <remarks>
+        /// Ejemplo solicitud:
+        ///
+        ///     POST /apolohra/getcomuna
+        ///     2101
+        /// 
+        /// </remarks>
+        /// <param name="codeIds">Código DEIS del establecimiento.</param>
+        /// <returns>Devuelve la comuna</returns>
+        /// <response code="200">Devuelve la comuna asociada al código DEIS</response>
+        /// <response code="400">Mensaje detallado del error</response>
+        /// <response code="401">No está autenticado</response>
         [HttpPost]
         [Authorize]
         [Route("getComuna")]
-        public IActionResult getComuna([FromBody] string code_ids)
+        [ProducesResponseType(typeof(Communes),StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string),StatusCodes.Status400BadRequest)]
+        public ActionResult<Communes> GetComuna([FromBody] string codeIds)
         {
             try
             {
-                var c = _db.communes.Where(x => x.code_deis.Equals(code_ids))
-                           .Select(per => new {per.id, per.name, per.code_deis});
+                var c = _db.communes
+                           .FirstOrDefault(x => x.code_deis.Equals(codeIds));
                 return Ok(c);
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Comuna con error, comuna id:{code_ids}", code_ids);
+                _logger.LogError(e, "Comuna con error, comuna id:{code_ids}", codeIds);
                 return BadRequest("Error.... Intente más tarde.");
             }
         }
 
         /// <summary>
-        /// Metodo de Agregar una demografia
+        /// Agrega datos demográficos al paciente.
         /// </summary>
-        /// <param name="demographics"></param>
-        /// <returns></returns>
-        /// Test = OK
+        /// <remarks>
+        /// Agrega información de la residencia y contacto del paciente
+        ///
+        /// Ejemplo solicitud:
+        ///
+        ///     POST /agregarhra/adddemograph
+        ///     {
+        ///         "street_type": "Calle"
+        ///         "address": "Avelino Contardo",
+        ///         "number": "1092",
+        ///         "department": "104",
+        ///         "nationality": "Chile",
+        ///         "commune_id": 12,
+        ///         "region_id": 2,
+        ///         "latitude": -23.62272150,
+        ///         "longitude": -70.38984400,
+        ///         "telephone": "552244405",
+        ///         "email": "test@mail.cl",
+        ///         "patient_id": 1,
+        ///         "created_at": "2020-11-28T12:00:00",
+        ///         "updated_at": "2020-11-28T12:00:00"
+        ///     }
+        /// </remarks>
+        /// <param name="demographics">Datos demográficos del paciente</param>
+        /// <returns>Un mensaje de existo de la operacion</returns>
+        /// <response code="200">Un mensaje del éxito de la operación</response>
+        /// <response code="400">Mensaje detallado del error</response>
+        /// <response code="401">No está autenticado</response>
         [HttpPost]
         [Authorize]
         [Route("AddDemograph")]
-        public IActionResult addDemograph([FromBody] demographics demographics)
+        [ProducesResponseType(typeof(string),StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string),StatusCodes.Status400BadRequest)]
+        public IActionResult AddDemograph([FromBody] demographics demographics)
         {
             try
             {
@@ -164,15 +260,46 @@ namespace WebService.Controllers
         }
 
         /// <summary>
-        /// Método donde se agrega .
+        /// Agrega una nueva sospecha de COVID al monitor esmeralda
         /// </summary>
-        /// <param name="sospecha">json de la sospecha</param>
-        /// <returns></returns>
-        /// TESTE = OK 
+        /// <remarks>
+        /// Ejemplo de solicitud:
+        ///
+        ///     POST /agregarhra/addsospecha
+        ///     {
+        ///         "gender": "male",
+        ///         "age": 45,
+        ///         "sample_at": "2020-10-27T08:30:00",
+        ///         "epidemiological_week": 7,
+        ///         "run_medic": "22222222",
+        ///         "symptoms": "Si",
+        ///         "symptoms_at": "2020-10-25T00:00:00",
+        ///         "pscr_sars_cov_2": "pending",
+        ///         "sample_type": "TÓRULAS NASOFARÍNGEAS",
+        ///         "epivigila": 1024,
+        ///         "gestation": false,
+        ///         "gestation_week": null,
+        ///         "close_contact": true,
+        ///         "functionary": true,
+        ///         "patient_id": 1,
+        ///         "laboratory_id": 3,
+        ///         "establishment_id": 3799,
+        ///         "user_id": 1,
+        ///         "created_at": "2020-10-28T09:00:00",
+        ///         "updated_at": "2020-10-28T09:00:00"
+        ///     }
+        /// </remarks>
+        /// <param name="sospecha">Información que es necesaria para la creación de la sospecha</param>
+        /// <returns>Devuelve el número del caso de sospecha</returns>
+        /// <response code="200">El número del caso de sospecha en el monitor</response>
+        /// <response code="400">Mensaje detallado del error</response>
+        /// <response code="401">No autenticado</response>
         [HttpPost]
         [Authorize]
         [Route("addSospecha")]
-        public IActionResult addSospecha([FromBody] Sospecha sospecha)
+        [ProducesResponseType(typeof(int?),StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string),StatusCodes.Status400BadRequest)]
+        public IActionResult AddSospecha([FromBody] Sospecha sospecha)
         {
             try
             {
@@ -210,20 +337,32 @@ namespace WebService.Controllers
         }
 
         /// <summary>
-        /// 
+        /// Informa la recepción de la muestra por parte del laboratorio
         /// </summary>
-        /// <param name="sospecha">
-        /// ID
-        /// reception_at
-        /// receptor_id
-        /// laboratory_id
-        /// </param>
-        /// <returns></returns>
-        /// Test = OK
+        /// <remarks>
+        /// Ejemplo de solicitud:
+        ///
+        ///     POST /apolohra/recepcionmuestra
+        ///     {
+        ///         "id": 1,
+        ///         "reception_at": "2020-10-28T18:00:00",
+        ///         "receptor_id": 1,
+        ///         "laboratory_id": 3,
+        ///         "updated_at": "2020-10-28T18:00"
+        ///     }
+        /// 
+        /// </remarks>
+        /// <param name="sospecha">Datos de la recepción de la muestra</param>
+        /// <returns>Un mensaje del resultado de la operacion</returns>
+        /// <response code="200">Un mensaje que la recepción se realizó</response>
+        /// <response code="400">Mensaje detallado del error</response>
+        /// <response code="401">No autenticado</response>
         [HttpPost]
         [Authorize]
         [Route("recepcionMuestra")]
-        public IActionResult udpateSospecha([FromBody] Sospecha sospecha)
+        [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
+        public IActionResult UdpateSospecha([FromBody] Sospecha sospecha)
         {
             try
             {
@@ -248,20 +387,32 @@ namespace WebService.Controllers
         }
 
         /// <summary>
-        /// Update 
+        /// Informa la entrega del resultado de la muestra al caso de sospecha
         /// </summary>
-        /// <param name="sospecha">
-        ///     pscr_sars_cov_2_at
-        ///     pscr_sars_cov_2
-        ///     validator_id
-        ///     updated_at
-        /// </param>
+        /// <remarks>
+        /// Ejemplo de la solicitud:
+        ///
+        ///     POST /apolohra/resultado
+        ///     {
+        ///         "id": 1,
+        ///         "pscr_sars_cov_2_at": "2020-08-29T10:30:22",
+        ///         "pscr_sars_cov_2": "negative",
+        ///         "validator_id": 1,
+        ///         "updated_at": "2020-08-29T10:30:22"
+        ///     }
+        ///
+        /// </remarks>
+        /// <param name="sospecha">Datos de la entrega del resultado</param>
         /// <returns></returns>
-        /// 
+        /// <response code="200">Un mensaje que se registró el resultado de la muestra</response>
+        /// <response code="400">Mensaje detallado del error</response>
+        /// <response code="401">No autenticado</response>
         [HttpPost]
         [Authorize]
         [Route("resultado")]
-        public IActionResult udpateResultado([FromBody] Sospecha sospecha)
+        [ProducesResponseType(typeof(string),StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string),StatusCodes.Status400BadRequest)]
+        public IActionResult UdpateResultado([FromBody] Sospecha sospecha)
         {
             try
             {
@@ -285,15 +436,26 @@ namespace WebService.Controllers
         }
 
         /// <summary>
-        /// Obtener el paciente con una ID 
+        /// Recupera el paciente dado un run u otro identificador
         /// </summary>
-        /// <param name="buscador"></param>
+        /// <remarks>
+        /// Ejemplo de solicitud
+        ///
+        ///     GET /apolohra/getpatients
+        ///     11111111
+        /// 
+        /// </remarks>
+        /// <param name="buscador">RUN u otro identificador</param>
         /// <returns>Paciente</returns>
-        /// TEST = OK
+        /// <response code="200">Información del paciente</response>
+        /// <response code="400">Mensaje detallado del error</response>
+        /// <response code="401">No autenticado</response>
         [HttpGet]
         [Authorize]
         [Route("getPatients")]
-        public IActionResult getPatients([FromBody] string buscador) 
+        [ProducesResponseType(typeof(Patients), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
+        public IActionResult GetPatients([FromBody] string buscador) 
         {
             try
             {
@@ -308,15 +470,28 @@ namespace WebService.Controllers
         }
 
         /// <summary>
-        /// Obtener el sospechas por el rut o other del paciente 
+        /// Recupera todos los casos de sospechas de un paciente.
         /// </summary>
+        /// <remarks>
+        /// El parámetro de la solicitud debe ser el RUN sin digito verificador u otro
+        /// identificador (Pasaporte,etc)
+        /// Ejemplo de solicitud:
+        ///
+        ///     GET /apolohra/getsospecha
+        ///     11111111
+        /// 
+        /// </remarks>
         /// <param name="buscador">RUN o DNI del paciente a consultar</param>
-        /// <returns>Paciente</returns>
-        /// TEST = OK
+        /// <returns>Un listado con los casos de sospecha que el paciente tiene</returns>
+        /// <response code="200">Un listado con los casos de sospechas asociados al paciente</response>
+        /// <response code="400">Mensaje detallado del error</response>
+        /// <response code="401">No autenticado</response>
         [HttpGet]
         [Authorize]
         [Route("getSospecha")]
-        public IActionResult getSospeha([FromBody] string buscador)
+        [ProducesResponseType(typeof(List<Sospecha>),StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string),StatusCodes.Status400BadRequest)]
+        public IActionResult GetSospeha([FromBody] string buscador)
         {
             try
             { 
@@ -348,7 +523,7 @@ namespace WebService.Controllers
                                            symptoms_at = s.symptoms_at,
                                            observation = s.observation
                                        }
-                                   );
+                                   ).ToList();
                 return Ok(sospecha);
             }
             catch (Exception e)
@@ -359,20 +534,33 @@ namespace WebService.Controllers
         }
 
         /// <summary>
-        /// Obtener el Demograph por el rut o other del paciente 
+        /// Recupera los datos demográficos del paciente
         /// </summary>
-        /// <param name="buscador"></param>
-        /// <returns>Paciente</returns>
-        /// TEST = OK
+        /// <remarks>
+        /// El parámetro de la solicitud debe ser el RUN sin digito verificador u otro
+        /// identificador (Pasaporte,etc)
+        /// Ejemplo de solicitud:
+        ///
+        ///     GET /apolohra/getdemograph
+        ///     11111111
+        /// 
+        /// </remarks>
+        /// <param name="buscador">RUN u otro identificador del paciente</param>
+        /// <returns>Datos demográficos del paciente</returns>
+        /// <response code="200">Datos demográficos del paciente</response>
+        /// <response code="400">Mensaje detallado del error</response>
+        /// <response code="401">No autenticado</response>
         [HttpGet]
         [Authorize]
         [Route("getDemograph")]
-        public IActionResult getDemograph([FromBody] string buscador)
+        [ProducesResponseType(typeof(demographics),StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string),StatusCodes.Status400BadRequest)]
+        public IActionResult GetDemograph([FromBody] string buscador)
         {
             try
             {   
                 var paciente = RecuperarPaciente(buscador);
-                var demographic = _db.demographics.Where(c => c.patient_id.Equals(paciente.id));
+                var demographic = _db.demographics.FirstOrDefault(c => c.patient_id.Equals(paciente.id));
                 return Ok(demographic);
             }
             catch (Exception e)
@@ -394,16 +582,26 @@ namespace WebService.Controllers
             return paciente;
         }
         /// <summary>
-        /// Obtener el sospechas por el rut o other del paciente 
+        /// Recupera el caso de sospecha con sus datos relacionados
         /// </summary>
-        /// <param name="idCase">
-        /// </param>
-        /// <returns>Paciente</returns>
-        /// TEST = OK
+        /// <remarks>
+        /// Recupera el caso de sospecha dado el número del caso.
+        /// Ejemplo de solicitud
+        ///
+        ///     POST /apolohra/getsuspectcase
+        ///     1
+        /// 
+        /// </remarks>
+        /// <param name="idCase">Número del caso</param>
+        /// <response code="200">Datos del caso de sospecha</response>
+        /// <response code="400">Mensaje detallado del error</response>
+        /// <response code="401">No autenticado</response>
         [HttpPost]
         [Authorize]
         [Route("getSuspectCase")]
-        public IActionResult getSuspectCase([FromBody] long idCase)
+        [ProducesResponseType(typeof(CasoResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
+        public IActionResult GetSuspectCase([FromBody] long idCase)
         {
             try
             {
@@ -422,7 +620,7 @@ namespace WebService.Controllers
                 {
                     return BadRequest("No existe el demografico");
                 }
-                object retorno = new
+                object retorno = new CasoResponse
                 {
                     caso = new Sospecha
                     {
@@ -448,5 +646,26 @@ namespace WebService.Controllers
                 return BadRequest("Computer system error." + e);
             }
         }
+    }
+
+    /// <summary>
+    /// Representa el caso de sospecha junto con la información del paciente.
+    /// </summary>
+    public class CasoResponse
+    {
+        /// <summary>
+        /// El caso de sospecha
+        /// </summary>
+        public Sospecha caso { get; set; }
+        
+        /// <summary>
+        /// EL paciente asociado al caso
+        /// </summary>
+        public Patients paciente { get; set; }
+        
+        /// <summary>
+        /// Los datos demográficos del paciente
+        /// </summary>
+        public demographics demografico { get; set; }
     }
 }
