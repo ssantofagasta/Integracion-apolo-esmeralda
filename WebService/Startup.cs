@@ -12,6 +12,7 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Swashbuckle.AspNetCore.Filters;
 using WebService.Services;
 
 namespace WebService
@@ -81,13 +82,15 @@ namespace WebService
             services.AddSwaggerGen(
                 c =>
                 {
-                    c.AddSecurityDefinition("oauth2", new OpenApiSecurityScheme
+                    c.AddSecurityDefinition("bearer", new OpenApiSecurityScheme
                     {
                         Description = "Encabezado de autorización estándar usando el esquema bearer. Ejemplo: \"bearer {token}\"",
                         In = ParameterLocation.Header,
-                        Name = "Authorization",
-                        Type = SecuritySchemeType.ApiKey
+                        BearerFormat = "JWT",
+                        Type = SecuritySchemeType.Http,
+                        Scheme = "bearer"
                     });
+                    c.OperationFilter<SecurityRequirementsOperationFilter>();
                     c.SwaggerDoc("v1", new OpenApiInfo {Title = "Monitor Esmeralda Api", Version = "v1"});
                     var docXml = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
                     var pathHelp = Path.Combine(AppContext.BaseDirectory, docXml);
