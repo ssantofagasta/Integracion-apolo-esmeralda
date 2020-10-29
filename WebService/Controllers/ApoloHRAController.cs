@@ -180,7 +180,7 @@ namespace WebService.Controllers
         /// Ejemplo solicitud:
         ///
         ///     POST /apolohra/getcomuna
-        ///     2101
+        ///     "2101"
         /// 
         /// </remarks>
         /// <param name="codeIds">Código DEIS del establecimiento.</param>
@@ -442,7 +442,7 @@ namespace WebService.Controllers
         /// Ejemplo de solicitud
         ///
         ///     GET /apolohra/getpatients
-        ///     11111111
+        ///     "11111111"
         /// 
         /// </remarks>
         /// <param name="buscador">RUN u otro identificador</param>
@@ -478,7 +478,7 @@ namespace WebService.Controllers
         /// Ejemplo de solicitud:
         ///
         ///     GET /apolohra/getsospecha
-        ///     11111111
+        ///     "11111111"
         /// 
         /// </remarks>
         /// <param name="buscador">RUN o DNI del paciente a consultar</param>
@@ -542,7 +542,7 @@ namespace WebService.Controllers
         /// Ejemplo de solicitud:
         ///
         ///     GET /apolohra/getdemograph
-        ///     11111111
+        ///     "11111111"
         /// 
         /// </remarks>
         /// <param name="buscador">RUN u otro identificador del paciente</param>
