@@ -15,32 +15,26 @@ namespace WebService.Models
         public long id { get; set; }
 
         /// <summary>
-        /// RUN del paciente
+        /// RUN del paciente. El run debe ir sin el dígito verificador
         /// </summary>
-        /// <remarks>
-        /// El run debe ir sin el dígito verificador
-        /// </remarks>
         public int? run { get; set; }
         
         /// <summary>
         /// Dígito verificador del RUN
         /// </summary>
         public string dv { get; set; }
-        
-        /// <summary>
-        /// Otra identificación
-        /// </summary>
-        /// <remarks>
-        /// En el caso que el paciente no tenga un RUN, se puede indicar aquí el pasaporte
-        /// u otro identificador
-        /// </remarks>
-        public string other_identification { get; set; }
-        
+
         /// <summary>
         /// Nombres del paciente
         /// </summary>
         public string name { get; set; }
-        
+
+        /// <summary>
+        /// Otra identificación. En el caso que el paciente no tenga un RUN,
+        /// se puede indicar aquí el pasaporte u otro identificador
+        /// </summary>
+        public string other_identification { get; set; }
+
         /// <summary>
         /// Apellido Paterno
         /// </summary>
@@ -52,58 +46,41 @@ namespace WebService.Models
         public string mothers_family { get; set; }
         
         /// <summary>
-        /// Genero del paciente
-        /// </summary>
-        /// <remarks>
-        /// Los valores que puede tener son los siguientes:
+        /// Genero del paciente. Los valores que puede tener son los siguientes:
         /// male, female, other, unknown
-        /// </remarks>
+        /// </summary>
         public string gender { get; set; }
         
         /// <summary>
-        /// Fecha de nacimiento
+        /// Fecha de nacimiento. El formato de la fecha debe estar en el estándar ISO 8601
         /// </summary>
-        /// <remarks>
-        /// El formato de la fecha debe estar en el estándar ISO 8601
-        /// </remarks>
         public DateTime? birthday { get; set; }
         
         /// <summary>
-        /// Estado del paciente
+        /// Estado del paciente. Los valores que puede tener son:
+        /// Nulo, Fallecido, Hospitalizado Medio, Residencia Sanitaria, Ambulatorio y
+        /// Hospitalizado UTI
         /// </summary>
-        /// <remarks>
-        /// Los valores que puede tener son:
-        /// Nulo, Fallecido, Hospitalizado Medio, Residencia Sanitaria, Ambulatorio, Hospitalizado UTI
-        /// </remarks>
         public string status { get; set; }
         
         /// <summary>
-        /// Fecha de fallecimiento
+        /// Fecha de fallecimiento. El formato de la fecha debe estar en el estándar ISO 8601
         /// </summary>
-        /// <remarks>
-        /// El formato de la fecha debe estar en el estándar ISO 8601
-        /// </remarks>
         public DateTime? deceased_at { get; set; }
         
         /// <summary>
-        /// Fecha de creación del paciente en sistema
+        /// Fecha de creación del paciente en sistema. El formato de la fecha debe estar en el estándar ISO 8601
         /// </summary>
         public DateTime? created_at { get; set; }
         
         /// <summary>
-        /// Fecha de actualización del paciente
+        /// Fecha de actualización del paciente. El formato de la fecha debe estar en el estándar ISO 8601
         /// </summary>
-        /// <remarks>
-        /// El formato de la fecha debe estar en el estándar ISO 8601
-        /// </remarks>
         public DateTime? updated_at { get; set; }
         
         /// <summary>
-        /// Fecha de eliminación del paciente
+        /// Fecha de eliminación del paciente. El formato de la fecha debe estar en el estándar ISO 8601
         /// </summary>
-        /// <remarks>
-        /// El formato de la fecha debe estar en el estándar ISO 8601
-        /// </remarks>
         public DateTime? deleted_at { get; set; }
     }
 }

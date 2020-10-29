@@ -20,19 +20,14 @@ namespace WebService.Request
         public int? age { get; set; }
         
         /// <summary>
-        /// Genero del paciente
+        /// Genero del paciente. Los valores que puede tener son: male, female, other, unknown
         /// </summary>
-        /// <remarks>
-        /// Los valores que puede tener son: male, female, other, unknown
-        /// </remarks>
         public string gender { get; set; }
         
         /// <summary>
-        /// Fecha y hora en que la muestra del caso fue tomada
-        /// </summary>
-        /// <remarks>
+        /// Fecha y hora en que la muestra del caso fue tomada.
         /// El formato de la fecha de estar en el estándar ISO 8601
-        /// </remarks>
+        /// </summary>
         public DateTime? sample_at { get; set; }
         
         /// <summary>
@@ -49,7 +44,7 @@ namespace WebService.Request
         public string run_medic { get; set; }
         
         /// <summary>
-        /// Indica si tuvo o no tuvo sintomas
+        /// Indica si tuvo o no tuvo síntomas
         /// </summary>
         /// <remarks>
         /// Los valores pueden ser: Si y No
@@ -57,23 +52,19 @@ namespace WebService.Request
         public string symptoms { get; set; }
         
         /// <summary>
-        /// Fecha que indica el paciente que comenzaron sus síntomas
-        /// </summary>
-        /// <remarks>
+        /// Fecha que indica el paciente que comenzaron sus síntomas.
         /// El formato de la fecha debe estar en el estándar ISO 8601
-        /// </remarks>
+        /// </summary>
         public DateTime? symptoms_at { get; set; }
         
         /// <summary>
-        /// Fecha y hora en que se recepcionó la muestra por parte del laboratorio
-        /// </summary>
-        /// <remarks>
+        /// Fecha y hora en que se recepcionó la muestra por parte del laboratorio. 
         /// El formato de la fecha debe estar en el estándar ISO 8601
-        /// </remarks>
+        /// </summary>
         public DateTime? reception_at { get; set; }
         
         /// <summary>
-        /// Identifica al usuario que recepcionó la muestra en el laboratorio.
+        /// Identifica al usuario que recibió la muestra en el laboratorio.
         /// </summary>
         public long? receptor_id { get; set; }
         
@@ -82,25 +73,20 @@ namespace WebService.Request
         //public string subtype { get; set; }
         
         /// <summary>
-        /// Fecha y hora en que se entregó el resultado del laboratorio
-        /// </summary>
-        /// <remarks>
+        /// Fecha y hora en que se entregó el resultado del laboratorio.
         /// El formato de la fecha debe estar en el estándar ISO 8601
-        /// </remarks>
+        /// </summary>
         public DateTime? pscr_sars_cov_2_at { get; set; }
         
         /// <summary>
-        /// Indica el resultado del muestra para el caso de sospecha 
+        /// Indica el resultado del muestra para el caso de sospecha.  
+        /// Los valores que puede tener son los siguientes:
+        /// pending, negative, positive, rejected, undetermined
         /// </summary>
-        /// <remarks>
-        /// Los valores que puede tener son los siguientes: pending, negative, positive, rejected, undetermined
-        /// </remarks>
         public string pscr_sars_cov_2 { get; set; }
         
         /// <summary>
         /// Define el tipo de muestra que tiene asociado el caso de sospecha
-        /// </summary>
-        /// <remarks>
         /// Sus valores pueden ser:
         ///   TÓRULAS NASOFARÍNGEAS,
         ///   ESPUTO,
@@ -112,7 +98,7 @@ namespace WebService.Request
         ///   TEJIDO PULMONAR,
         ///   SALIVA,
         ///   OTRO
-        /// </remarks>
+        /// </summary>
         public string sample_type { get; set; }
         
         /// <summary>
@@ -176,17 +162,19 @@ namespace WebService.Request
         public long? establishment_id { get; set; }
         
         /// <summary>
-        /// 
+        /// Identificador del usuario que creo el caso de sospecha. 
         /// </summary>
         public long? user_id { get; set; }
         
         /// <summary>
-        /// 
+        /// Fecha en que se actualizó el caso de sospecha. 
+        /// El formato de la fecha debe estar en el estándar ISO 8601
         /// </summary>
         public DateTime? updated_at { get; set; }
         
         /// <summary>
-        /// 
+        /// Fecha en que se creó el caso de sospecha. 
+        /// El formato de la fecha debe estar en el estándar ISO 8601
         /// </summary>
         public DateTime? created_at { get; set; }
         //public DateTime? deleted_at { get; set; }

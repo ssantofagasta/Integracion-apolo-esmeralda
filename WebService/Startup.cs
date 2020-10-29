@@ -101,8 +101,13 @@ namespace WebService
         {
             if (env.IsDevelopment()) app.UseDeveloperExceptionPage();
 
-            app.UseSwagger();
-            app.UseSwaggerUI(c=>c.SwaggerEndpoint("/swagger/v1/swagger.json","Monitor Esmeralda Api"));
+            app.UseSwagger(c => c.RouteTemplate = "apolohra/apidocs/{documentname}/docs.json");
+            app.UseSwaggerUI(c=>
+                {
+                    c.SwaggerEndpoint("/apolohra/apidocs/v1/docs.json", "Monitor Esmeralda Api");
+                    c.RoutePrefix = "apolohra/apidocs";
+                }
+            );
             app.UseHttpsRedirection();
 
             app.UseAuthentication();

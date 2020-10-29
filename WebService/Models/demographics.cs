@@ -15,11 +15,8 @@ namespace WebService.Models
         public long? id { get; set; }
 
         /// <summary>
-        /// Tipo de la dirección
+        /// Tipo de la dirección. Estos pueden ser: Calle, Pasaje, Avenida y Camino
         /// </summary>
-        /// <remarks>
-        /// Estos pueden ser: Calle, Pasaje, Avenida y Camino
-        /// </remarks>
         public string street_type { get; set; }
         
         /// <summary>
@@ -93,27 +90,18 @@ namespace WebService.Models
         public long? patient_id { get; set; }
         
         /// <summary>
-        /// Fecha de creación de los datos demográficos
+        /// Fecha de creación de los datos demográficos. El formato de la fecha debe estar en el estándar ISO 8601
         /// </summary>
-        /// <remarks>
-        /// El formato de la fecha debe estar en el estándar ISO 8601
-        /// </remarks>
         public DateTime? created_at { get; set; }
         
         /// <summary>
-        /// Fecha de actualización de los datos demográficos
+        /// Fecha de actualización de los datos demográficos. El formato de la fecha debe estar en el estándar ISO 8601
         /// </summary>
-        /// <remarks>
-        /// El formato de la fecha debe estar en el estándar ISO 8601
-        /// </remarks>
         public DateTime? updated_at { get; set; }
         
         /// <summary>
-        /// Fecha de eliminación de los datos demográficos
+        /// Fecha de eliminación de los datos demográficos. El formato de la fecha debe estar en el estándar ISO 8601
         /// </summary>
-        /// <remarks>
-        /// El formato de la fecha debe estar en el estándar ISO 8601
-        /// </remarks>
         public DateTime? deleted_at { get; set; }
     }
 }
