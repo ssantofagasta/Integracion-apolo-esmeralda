@@ -12,7 +12,6 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using Swashbuckle.AspNetCore.Filters;
 using WebService.Services;
 
 namespace WebService
@@ -33,7 +32,13 @@ namespace WebService
                 options => options.AddMysqlDb(Configuration)
             );
 
-            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            services.AddAuthentication(
+                         o=>
+                         {
+                             o.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                             o.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                         }
+                     )
                     .AddJwtBearer(
                          options =>
                              options.TokenValidationParameters = new TokenValidationParameters
@@ -82,14 +87,14 @@ namespace WebService
             services.AddSwaggerGen(
                 c =>
                 {
-                    c.AddSecurityDefinition("bearer", new OpenApiSecurityScheme
+                    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
                     {
-                        Description = "Encabezado de autorización estándar usando el esquema bearer. Ejemplo: \"bearer {token}\"",
                         Name = "Authorization",
                         In = ParameterLocation.Header,
                         BearerFormat = "JWT",
                         Type = SecuritySchemeType.ApiKey,
-                        Scheme = "Bearer"
+                        Scheme = "Bearer",
+                        Description = "Bearer JWT"
                     });
                     c.AddSecurityRequirement(new OpenApiSecurityRequirement
                     {
