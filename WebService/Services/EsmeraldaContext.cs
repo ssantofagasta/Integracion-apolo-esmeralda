@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using WebService.Models;
+using WebService.Request;
 
 namespace WebService.Services
 {
@@ -11,6 +12,6 @@ namespace WebService.Services
         public DbSet<Patients> patients { get; set; }
         public DbSet<Communes> communes { get; set; }
         public DbSet<demographics> demographics { get; set; }
-        public DbSet<Sospecha> suspect_cases { get; set; }
+        public DbSet<SuspectCase> suspect_cases { get; set; }
     }
 }

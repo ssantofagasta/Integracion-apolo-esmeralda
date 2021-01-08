@@ -22,9 +22,11 @@ spec:
     spec:
       restartPolicy: Always
       containers:
-        - image: "gcr.io/saludantofagasta-proy1/integracion-hra-api:248"
+        - image: "gcr.io/saludantofagasta-proy1/integracion-hra-api:269"
           name: integracion-hra
           env:
+            - name: TZ
+              value: Chile/Continental
             - name: DB_SERVER
               value: /tmp/proxysql.sock
             - name: DB_USER
@@ -68,6 +70,8 @@ spec:
         - image: "gcr.io/saludantofagasta-proy1/proxysql"
           name: proxysql
           env:
+            - name: TZ
+              value: Chile/Continental
             - name: PROXY_PASS
               valueFrom:
                 secretKeyRef:
