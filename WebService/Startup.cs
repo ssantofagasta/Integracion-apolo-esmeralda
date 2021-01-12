@@ -31,7 +31,7 @@ namespace WebService
             services.AddDbContext<EsmeraldaContext>(
                 options => options.AddMysqlDb(Configuration)
             );
-
+            var a = Configuration["llavePrincipal"];
             services.AddAuthentication(
                          o=>
                          {

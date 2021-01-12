@@ -306,19 +306,19 @@ namespace WebService.Controllers
                 var suspectCase = new SuspectCase
                 {
                     age = sospecha.age,
-                    gender = sospecha.gender,
-                    sample_at = sospecha.sample_at,
+                    gender = sospecha.gender,// sexo del paciente
+                    sample_at = sospecha.sample_at, //fecha muestra
                     epidemiological_week = sospecha.epidemiological_week,
-                    run_medic = sospecha.run_medic,
+                    run_medic = sospecha.run_medic,//rut medico solicitante
                     symptoms = sospecha.symptoms == "Si",
                     pcr_sars_cov_2 = sospecha.pscr_sars_cov_2,
-                    sample_type = sospecha.sample_type,
+                    sample_type = sospecha.sample_type,// tipo de muestra
                     epivigila = sospecha.epivigila,
                     gestation = sospecha.gestation,
                     gestation_week = sospecha.gestation_week,
                     close_contact = sospecha.close_contact,
                     functionary = sospecha.functionary,
-                    patient_id = sospecha.patient_id,
+                    patient_id = sospecha.patient_id,//rut del paciente
                     establishment_id = sospecha.establishment_id,
                     user_id = sospecha.user_id,
                     created_at = sospecha.created_at,
@@ -387,7 +387,7 @@ namespace WebService.Controllers
         }
 
         /// <summary>
-        /// Informa la entrega del resultado de la muestra al caso de sospecha
+        /// Informa la entrega del resultado de la muestra al caso de asospecha
         /// </summary>
         /// <remarks>
         /// Ejemplo de la solicitud:
