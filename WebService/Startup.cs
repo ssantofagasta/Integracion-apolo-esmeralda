@@ -1,5 +1,7 @@
 using System;
 using System.IO;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Reflection;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -27,11 +29,11 @@ namespace WebService
 
         public void ConfigureServices(IServiceCollection services)
         {
+
             services.AddControllers();
             services.AddDbContext<EsmeraldaContext>(
                 options => options.AddMysqlDb(Configuration)
             );
-            var a = Configuration["llavePrincipal"];
             services.AddAuthentication(
                          o=>
                          {
@@ -116,6 +118,9 @@ namespace WebService
                     c.IncludeXmlComments(pathHelp);
                 }
             );
+
+            //nuevo codigo conexion minsal 
+            services.AddHttpClient("conexionApiMinsal", ConfigureClient);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -130,17 +135,25 @@ namespace WebService
                     c.RoutePrefix = "apolohra/apidocs";
                 }
             );
-            app.UseHttpsRedirection();
+            //app.UseHttpsRedirection();
 
-            app.UseAuthentication();
+            //app.UseAuthentication();
             app.UseRouting();
             app.UseCors("CorsPolicy");
-            app.UseAuthorization();
+            //app.UseAuthorization();
 
             app.UseHealthChecks("/self", new HealthCheckOptions {Predicate = r => r.Name.Contains("self")});
             app.UseHealthChecks("/ready", new HealthCheckOptions {Predicate = r => r.Tags.Contains("service")});
             
             app.UseEndpoints(endpoints => { endpoints.MapControllers(); });
+        }
+
+        //metodo para conexion minsal
+        private void ConfigureClient(HttpClient client)
+        {
+            client.BaseAddress = new Uri(Configuration["urlApiMinsal"]);
+            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            client.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", "HttpClient");
         }
     }
 }

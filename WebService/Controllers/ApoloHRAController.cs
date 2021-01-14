@@ -1,11 +1,15 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
+using System.Net.Http.Json;
+using System.Net.Http.Headers;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using WebService.Models;
 using WebService.Models_HRA;
 using WebService.Request;
@@ -20,20 +24,22 @@ namespace WebService.Controllers
     [ApiController]
     //TODO DESCOMENTAR ESTO
     //[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
-    public class ApoloHRAController : ControllerBase
+    public class ApoloHRAController: ControllerBase
     {
         private readonly ILogger<ApoloHRAController> _logger;
         private readonly EsmeraldaContext _db;
+        private readonly IHttpClientFactory _clientFactory;
 
         /// <summary>
         /// 
         /// </summary>
         /// <param name="logger"></param>
         /// <param name="db"></param>
-        public ApoloHRAController(ILogger<ApoloHRAController> logger, EsmeraldaContext db)
+        public ApoloHRAController(ILogger<ApoloHRAController> logger, EsmeraldaContext db, IHttpClientFactory clientFactory)
         {
             _logger = logger;
             _db = db;
+            _clientFactory = clientFactory;
         }
 
         /// <summary>
@@ -106,7 +112,7 @@ namespace WebService.Controllers
         [HttpPost]
         //[Authorize]
         [Route("getPatient_ID")]
-        [ProducesResponseType(typeof(int?),StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(int?), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
         public IActionResult GetPatientId([FromBody] PacienteHRA pa)
         {
@@ -118,7 +124,7 @@ namespace WebService.Controllers
                 else
                     p = _db.patients.FirstOrDefault(a => a.run.Equals(int.Parse(pa.run)));
 
-                return p != null? Ok(p.id): Ok(null);
+                return p != null ? Ok(p.id) : Ok(null);
             }
             catch (Exception e)
             {
@@ -157,8 +163,8 @@ namespace WebService.Controllers
         [HttpPost]
         //[Authorize]
         [Route("AddPatients")]
-        [ProducesResponseType(typeof(int?),StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(string),StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(int?), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
         public IActionResult AddPatients([FromBody] Patients patients)
         {
             try
@@ -171,7 +177,7 @@ namespace WebService.Controllers
             catch (Exception e)
             {
                 _logger.LogError(e, "Paciente no guasrdado, paciente:{patients}", patients);
-                return BadRequest("Error.... Intente más tarde." + " Error:"+ e);
+                return BadRequest("Error.... Intente más tarde." + " Error:" + e);
             }
         }
 
@@ -193,8 +199,8 @@ namespace WebService.Controllers
         [HttpPost]
         //[Authorize]
         [Route("getComuna")]
-        [ProducesResponseType(typeof(Communes),StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(string),StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(Communes), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
         public ActionResult<Communes> GetComuna([FromBody] string codeIds)
         {
             try
@@ -244,8 +250,8 @@ namespace WebService.Controllers
         [HttpPost]
         //[Authorize]
         [Route("AddDemograph")]
-        [ProducesResponseType(typeof(string),StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(string),StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
         public IActionResult AddDemograph([FromBody] demographics demographics)
         {
             try
@@ -257,8 +263,8 @@ namespace WebService.Controllers
             catch (Exception e)
             {
                 _logger.LogError(e, "Demografico no agregado, demographics:{demographics}", demographics);
-                return BadRequest("Error.....Intente más Tarde"+ e ) ;
-            }        
+                return BadRequest("Error.....Intente más Tarde" + e);
+            }
         }
 
         /// <summary>
@@ -299,8 +305,8 @@ namespace WebService.Controllers
         [HttpPost]
         //[Authorize]
         [Route("addSospecha")]
-        [ProducesResponseType(typeof(int?),StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(string),StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(int?), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
         public IActionResult AddSospecha([FromBody] Sospecha sospecha)
         {
             try
@@ -329,6 +335,78 @@ namespace WebService.Controllers
 
                 _db.suspect_cases.Add(suspectCase);
                 _db.SaveChanges();
+
+                var paciente = _db.patients.Find(suspectCase.patient_id);
+                var demografia = _db.demographics.Find(paciente.id);
+                var comuna = _db.communes.Find(demografia.commune_id);
+                var pais = _db.countries.Where(a => a.name == demografia.nationality).FirstOrDefault();
+                var laboratorio = _db.laboratories.Where(a => a.id == 2).FirstOrDefault();
+                var responsable = _db.users.Find(suspectCase.user_id);
+                var tipodoc = "";
+                var sexo = "";
+
+                if (paciente.gender == "male")
+                {
+                    sexo = "M";
+                }
+                else
+                {
+                    sexo = "F";
+                }
+
+                if (paciente.run != null)
+                {
+                    if (paciente.dv == null)
+                    {
+                        int suma = 0;
+                        for (int x = (paciente.run).ToString().Length; x >= 0; x--)
+                            suma += ((paciente.run).ToString()[x]) * ((((paciente.run).ToString().Length - x) % 6) + 2);
+                        int numericDigito = (11 - suma % 11);
+                        string digito = numericDigito == 11 ? "0" : numericDigito == 10 ? "K" : numericDigito.ToString();
+                        paciente.dv = digito;
+                    }
+                    tipodoc = "RUN";
+                }
+                else
+                {
+                    tipodoc = "PASAPORTE";
+                }
+
+                List<muestraMinsal> muestras = new List<muestraMinsal>();
+
+                muestras.Add( new muestraMinsal
+                {
+                    codigo_muestra_cliente = suspectCase.id.ToString(),
+                    id_laboratorio = laboratorio.id_openagora,
+                    rut_responsable = responsable.run+"-"+responsable.dv,
+                    paciente_tipodoc = tipodoc,
+                    paciente_nombres = paciente.name,
+                    paciente_ap_pat = paciente.fathers_family,
+                    paciente_ap_mat = paciente.mothers_family,
+                    paciente_fecha_nac = ((DateTime)paciente.birthday).ToString("dd-MM-yyyy"),
+                    paciente_comuna = comuna.code_deis,
+                    paciente_direccion = (demografia.address + " - " + demografia.number),
+                    paciente_telefono = Convert.ToInt64(demografia.telephone),
+                    paciente_sexo = sexo,
+                    cod_deis = _db.establishments.Find(suspectCase.establishment_id).new_code_deis,
+                    fecha_muestra = ((DateTime)suspectCase.sample_at).ToString("dd-MM-yyyyTHH:mm:ss"), 
+                    tecnica_muestra = "RT-PCR",
+                    tipo_muestra = suspectCase.sample_type,
+                    paciente_run = paciente.run.ToString(),
+                    paciente_dv = paciente.dv,
+                    paciente_prevision = "FONASA",
+                    paciente_pasaporte = paciente.other_identification,
+                    paciente_ext_paisorigen = pais.id_minsal
+                    
+                });
+
+                var httpClient = _clientFactory.CreateClient("conexionApiMinsal");
+                httpClient.DefaultRequestHeaders.Add("ACCESSKEY", laboratorio.token_ws);
+                HttpResponseMessage response = httpClient.PostAsJsonAsync("crearMuestras", muestras).Result;
+                List<respuestaMuestraMinsal> respuesta = response.Content.ReadAsAsync<List<respuestaMuestraMinsal>>().Result;
+
+                suspectCase.minsal_ws_id = Convert.ToInt64(respuesta.First().id_muestra);
+
                 return Ok(suspectCase.id);
             }
             catch (Exception e)
@@ -412,8 +490,8 @@ namespace WebService.Controllers
         [HttpPost]
         //[Authorize]
         [Route("resultado")]
-        [ProducesResponseType(typeof(string),StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(string),StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
         public IActionResult UdpateResultado([FromBody] Sospecha sospecha)
         {
             try
@@ -426,7 +504,7 @@ namespace WebService.Controllers
                 sospechaActualizada.pcr_sars_cov_2 = sospecha.pscr_sars_cov_2;
                 sospechaActualizada.validator_id = sospecha.validator_id;
                 sospechaActualizada.updated_at = sospecha.updated_at;
-                
+
                 _db.SaveChanges();
                 return Ok("Exito... se actualizo los resultado..");
             }
@@ -457,7 +535,7 @@ namespace WebService.Controllers
         [Route("getPatients")]
         [ProducesResponseType(typeof(Patients), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
-        public IActionResult GetPatients([FromBody] string buscador) 
+        public IActionResult GetPatients([FromBody] string buscador)
         {
             try
             {
@@ -468,7 +546,7 @@ namespace WebService.Controllers
             {
                 _logger.LogError(e, "No se puede recuperar paciente:{buscador}", buscador);
                 return BadRequest("No se Encontro Paciente.... problema" + e);
-            }     
+            }
         }
 
         /// <summary>
@@ -491,12 +569,12 @@ namespace WebService.Controllers
         [HttpGet]
         //[Authorize]
         [Route("getSospecha")]
-        [ProducesResponseType(typeof(List<Sospecha>),StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(string),StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(List<Sospecha>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
         public IActionResult GetSospeha([FromBody] string buscador)
         {
             try
-            { 
+            {
                 var paciente = RecuperarPaciente(buscador);
                 var sospecha = _db.suspect_cases.Where(c => c.patient_id.Equals(paciente.id))
                                   .Select(
@@ -508,7 +586,7 @@ namespace WebService.Controllers
                                            sample_at = s.sample_at,
                                            epidemiological_week = s.epidemiological_week,
                                            run_medic = s.run_medic,
-                                           symptoms = s.symptoms.HasValue?s.symptoms.Value? "Si": "No":"No",
+                                           symptoms = s.symptoms.HasValue ? s.symptoms.Value ? "Si" : "No" : "No",
                                            pscr_sars_cov_2 = s.pcr_sars_cov_2,
                                            pscr_sars_cov_2_at = s.pcr_sars_cov_2_at,
                                            sample_type = s.sample_type,
@@ -555,12 +633,12 @@ namespace WebService.Controllers
         [HttpGet]
         //[Authorize]
         [Route("getDemograph")]
-        [ProducesResponseType(typeof(demographics),StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(string),StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(demographics), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
         public IActionResult GetDemograph([FromBody] string buscador)
         {
             try
-            {   
+            {
                 var paciente = RecuperarPaciente(buscador);
                 var demographic = _db.demographics.FirstOrDefault(c => c.patient_id.Equals(paciente.id));
                 return Ok(demographic);
@@ -629,7 +707,7 @@ namespace WebService.Controllers
                         id = caso.id,
                         sample_at = caso.sample_at,
                         run_medic = caso.run_medic,
-                        symptoms = caso.symptoms.HasValue?caso.symptoms.Value? "Si": "No":"No",
+                        symptoms = caso.symptoms.HasValue ? caso.symptoms.Value ? "Si" : "No" : "No",
                         symptoms_at = caso.symptoms_at,
                         sample_type = caso.sample_type,
                         epivigila = caso.epivigila,
@@ -659,12 +737,12 @@ namespace WebService.Controllers
         /// El caso de sospecha
         /// </summary>
         public Sospecha caso { get; set; }
-        
+
         /// <summary>
         /// EL paciente asociado al caso
         /// </summary>
         public Patients paciente { get; set; }
-        
+
         /// <summary>
         /// Los datos demográficos del paciente
         /// </summary>
