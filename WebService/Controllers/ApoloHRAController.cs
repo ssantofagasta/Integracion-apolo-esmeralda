@@ -405,7 +405,11 @@ namespace WebService.Controllers
                 HttpResponseMessage response = httpClient.PostAsJsonAsync("crearMuestras", muestras).Result;
                 List<respuestaMuestraMinsal> respuesta = response.Content.ReadAsAsync<List<respuestaMuestraMinsal>>().Result;
 
-                suspectCase.minsal_ws_id = Convert.ToInt64(respuesta.First().id_muestra);
+                suspectCase = _db.suspect_cases.Find(suspectCase.id);
+                suspectCase.minsal_ws_id = respuesta.First().id_muestra;
+                //TODO Actualizar el mensaje de error             
+                _db.suspect_cases.Update(suspectCase);
+                _db.SaveChanges();
 
                 return Ok(suspectCase.id);
             }
@@ -446,6 +450,7 @@ namespace WebService.Controllers
         {
             try
             {
+
                 var sospechaActualizada = _db.suspect_cases.Find(sospecha.id);
 
                 if (sospechaActualizada == null) return BadRequest("No se guardo correctamente....");
@@ -456,6 +461,30 @@ namespace WebService.Controllers
                 sospechaActualizada.updated_at = sospecha.updated_at;
 
                 _db.SaveChanges();
+
+
+                var laboratorio = _db.laboratories.Where(a => a.id == 2).FirstOrDefault();
+
+                List<recepcionMinsal> recepcionesMinsal = new List<recepcionMinsal>();
+
+
+                recepcionesMinsal.Add(new recepcionMinsal
+                {
+                    id_muestra = sospechaActualizada.minsal_ws_id
+                });
+
+                var httpClient = _clientFactory.CreateClient("conexionApiMinsal");
+                httpClient.DefaultRequestHeaders.Add("ACCESSKEY", laboratorio.token_ws);
+                HttpResponseMessage response = httpClient.PostAsJsonAsync("recepcionarMuestra", recepcionesMinsal).Result;
+                List<respuestaMuestraMinsal> respuesta = response.Content.ReadAsAsync<List<respuestaMuestraMinsal>>().Result;
+
+                //sospechaActualizada = _db.suspect_cases.Find(sospechaActualizada.id);
+                //sospechaActualizada.minsal_ws_id = respuesta.First().id_muestra;
+                ////TODO Actualizar el mensaje de error             
+                //_db.suspect_cases.Update(sospechaActualizada);
+                //_db.SaveChanges();
+
+
 
                 return Ok("Se Guardo correctamente...");
             }
