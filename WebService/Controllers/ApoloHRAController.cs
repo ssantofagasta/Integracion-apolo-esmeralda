@@ -467,7 +467,6 @@ namespace WebService.Controllers
 
                 List<recepcionMinsal> recepcionesMinsal = new List<recepcionMinsal>();
 
-
                 recepcionesMinsal.Add(new recepcionMinsal
                 {
                     id_muestra = sospechaActualizada.minsal_ws_id
@@ -475,6 +474,7 @@ namespace WebService.Controllers
 
                 var httpClient = _clientFactory.CreateClient("conexionApiMinsal");
                 httpClient.DefaultRequestHeaders.Add("ACCESSKEY", laboratorio.token_ws);
+                var json = JsonConvert.SerializeObject(recepcionesMinsal);
                 HttpResponseMessage response = httpClient.PostAsJsonAsync("recepcionarMuestra", recepcionesMinsal).Result;
                 List<respuestaMuestraMinsal> respuesta = response.Content.ReadAsAsync<List<respuestaMuestraMinsal>>().Result;
 
@@ -483,8 +483,6 @@ namespace WebService.Controllers
                 ////TODO Actualizar el mensaje de error             
                 //_db.suspect_cases.Update(sospechaActualizada);
                 //_db.SaveChanges();
-
-
 
                 return Ok("Se Guardo correctamente...");
             }
