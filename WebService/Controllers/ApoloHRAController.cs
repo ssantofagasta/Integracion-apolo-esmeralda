@@ -533,6 +533,39 @@ namespace WebService.Controllers
                 sospechaActualizada.updated_at = sospecha.updated_at;
 
                 _db.SaveChanges();
+
+                var resultadoEME = sospechaActualizada.pcr_sars_cov_2;
+                if (resultadoEME == "negative")
+                {
+                    resultadoEME = "Negativo";
+                }
+                else
+                {
+                    if (resultadoEME == "positive")
+                    {
+                        resultadoEME = "Positivo";
+                    }
+                    else
+                    {
+                        resultadoEME = "Muestra no apta";
+                    }
+                }
+
+                var laboratorio = _db.laboratories.Where(a => a.id == 2).FirstOrDefault();
+
+                resultadoMinsal resultado = new resultadoMinsal
+                {
+                    id_muestra = sospechaActualizada.minsal_ws_id,
+                    resultado = resultadoEME
+                };
+
+                var httpClient = _clientFactory.CreateClient("conexionApiMinsal");
+                httpClient.DefaultRequestHeaders.Add("ACCESSKEY", laboratorio.token_ws);
+                var json = JsonConvert.SerializeObject(resultado);
+                HttpResponseMessage response = httpClient.PostAsJsonAsync("recepcionarMuestra", resultado).Result;
+                List<respuestaResultadoMinsal> respuesta = response.Content.ReadAsAsync<List<respuestaResultadoMinsal>>().Result;
+
+                 
                 return Ok("Exito... se actualizo los resultado..");
             }
             catch (Exception e)
