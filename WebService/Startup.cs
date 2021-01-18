@@ -15,6 +15,8 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using WebService.Services;
+using WebService.Models;
+using System.Collections.Generic;
 
 namespace WebService
 {
@@ -35,7 +37,7 @@ namespace WebService
                 options => options.AddMysqlDb(Configuration)
             );
             services.AddAuthentication(
-                         o=>
+                         o =>
                          {
                              o.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
                              o.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -61,7 +63,7 @@ namespace WebService
             services.AddHealthChecks()
                     .AddCheck("self", () => HealthCheckResult.Healthy())
                     .AddDbContextCheck<EsmeraldaContext>(
-                         tags: new[] {"service"},
+                         tags: new[] { "service" },
                          customTestQuery: async (context, token) =>
                          {
                              var database = context.Database;
@@ -112,7 +114,7 @@ namespace WebService
                             new string[]{}
                         }
                     });
-                    c.SwaggerDoc("v1", new OpenApiInfo {Title = "Monitor Esmeralda Api", Version = "v1"});
+                    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Monitor Esmeralda Api", Version = "v1" });
                     var docXml = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
                     var pathHelp = Path.Combine(AppContext.BaseDirectory, docXml);
                     c.IncludeXmlComments(pathHelp);
@@ -121,6 +123,8 @@ namespace WebService
 
             //nuevo codigo conexion minsal 
             services.AddHttpClient("conexionApiMinsal", ConfigureClient);
+
+            services.AddHttpClient("conexionEsmeralda", ConfigureClientEME);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -129,7 +133,7 @@ namespace WebService
             if (env.IsDevelopment()) app.UseDeveloperExceptionPage();
 
             app.UseSwagger(c => c.RouteTemplate = "apolohra/apidocs/{documentname}/docs.json");
-            app.UseSwaggerUI(c=>
+            app.UseSwaggerUI(c =>
                 {
                     c.SwaggerEndpoint("/apolohra/apidocs/v1/docs.json", "Monitor Esmeralda Api");
                     c.RoutePrefix = "apolohra/apidocs";
@@ -142,9 +146,9 @@ namespace WebService
             app.UseCors("CorsPolicy");
             //app.UseAuthorization();
 
-            app.UseHealthChecks("/self", new HealthCheckOptions {Predicate = r => r.Name.Contains("self")});
-            app.UseHealthChecks("/ready", new HealthCheckOptions {Predicate = r => r.Tags.Contains("service")});
-            
+            app.UseHealthChecks("/self", new HealthCheckOptions { Predicate = r => r.Name.Contains("self") });
+            app.UseHealthChecks("/ready", new HealthCheckOptions { Predicate = r => r.Tags.Contains("service") });
+
             app.UseEndpoints(endpoints => { endpoints.MapControllers(); });
         }
 
@@ -154,6 +158,19 @@ namespace WebService
             client.BaseAddress = new Uri(Configuration["urlApiMinsal"]);
             client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             client.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", "HttpClient");
+        }
+
+        private void ConfigureClientEME(HttpClient client)
+        {
+            client.BaseAddress = new Uri(Configuration["urlEsmeralda"]);
+            client.DefaultRequestHeaders.Accept.Clear();
+            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("text/html"));
+            //client.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", "HttpClient");
+
+            //tokenEME tokencall = new tokenEME() { email = "osvaldo.lara@redsalud.gob.cl", password = "ME?9yd#za2AmE%AM" }; //P41n1975.003.HRA
+            //HttpResponseMessage response = client.PostAsJsonAsync("login", tokencall).Result;
+            //client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            //client.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", "HttpClient");
         }
     }
 }
