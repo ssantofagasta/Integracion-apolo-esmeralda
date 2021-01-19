@@ -18,6 +18,7 @@ using WebService.Services;
 using System.Net;
 using System.Web;
 using System.Text;
+using Microsoft.Extensions.Hosting.Internal;
 
 namespace WebService.Controllers
 {
@@ -570,47 +571,50 @@ namespace WebService.Controllers
                 string textoInicio = "<input type=\"hidden\" name=\"_token\" value=\"";
                 string textoFin = "\">";
                 string tokenlogin = "";
-                tokenlogin = GetTextoIntermedio(stream, textoInicio,textoFin);
+                tokenlogin = GetTextoIntermedio(stream, textoInicio, textoFin);
 
-                IEnumerable<string> cookies = tokenEME.Headers.SingleOrDefault(header => header.Key == "Set-Cookie").Value;
+                //IEnumerable<string> cookies = tokenEME.Headers.SingleOrDefault(header => header.Key == "Set-Cookie").Value;
 
-                textoInicio = "XSRF-TOKEN=";               
-                textoFin = "%3D;";
-                string c1 = cookies.ElementAt(0);
-                string c2 = cookies.ElementAt(1);
-                var cookieXsrf = GetTextoIntermedio(c1, textoInicio, textoFin);
-                textoInicio = "monitor_esmeralda_session=";
-                var cookieSessionEME = GetTextoIntermedio(c2, textoInicio, textoFin);
-                string c3 = cookies.ElementAt(2);
-                textoFin = ";";
-                var cookieName = GetTextoIntermedio(c3, "", "=");
-                var cookieNN = GetTextoIntermedio(c3, "=", textoFin);
+                //textoInicio = "XSRF-TOKEN=";
+                ////textoFin = "%3D;";
+                //textoFin = " expires";
+                //string c1 = cookies.ElementAt(0);
+                //string c2 = cookies.ElementAt(1);
+                //var cookieXsrf = GetTextoIntermedio(c1, "", textoFin);
+                //textoInicio = "monitor_esmeralda_session=";
+                //var cookieSessionEME = GetTextoIntermedio(c2, "", textoFin);
+                //string c3 = cookies.ElementAt(2);
+                ////textoFin = ";";
+                //var cookieName = GetTextoIntermedio(c3, "", "=");
+                //var cookieNN = GetTextoIntermedio(c3, "", textoFin);
 
-                HttpClient APIEME = _clientFactory.CreateClient("conexionEsmeralda");                
-                APIEME.DefaultRequestHeaders.Add("Set-Cookie", "XSRF-TOKEN=" + cookieXsrf);
-                APIEME.DefaultRequestHeaders.Add("Set-Cookie", "monitor_esmeralda_session=" + cookieSessionEME);
-                APIEME.DefaultRequestHeaders.Add("Set-Cookie", cookieName+"="+cookieNN);
-                //tokenEME tokencall = new tokenEME() { _token= tokenlogin, email = "osvaldo.lara@redsalud.gob.cl", password = "ME?9yd#za2AmE%AM" };
-                //HttpResponseMessage responseLogin = APIEME.PostAsJsonAsync("login", tokencall).Result;
-                var form_params = new Dictionary<string, string>(){
-                    {"_token", tokenlogin},
-                    {"email", "osvaldo.lara@redsalud.gob.cl"},
-                    {"password", "ME?9yd#za2AmE%AM"},
-                };
-                //var jsonParams = JsonConvert.SerializeObject(form_params);
-                //var httpContent = new StringContent(jsonParams, Encoding.UTF8, "application/json");
-                var content = new FormUrlEncodedContent(form_params);
-                HttpResponseMessage responseLogin = APIEME.PostAsync("login", content).Result;
-                APIEME.Dispose();
+                HttpClient APIEME = _clientFactory.CreateClient("conexionEsmeralda");
+                //tokenEME tokencall = new tokenEME(){ _token = tokenlogin, email = "osvaldo.lara@redsalud.gob.cl", password = "ME?9yd#za2AmE%AM" };
+                //var httpContent = new StringContent("_token=" + tokenlogin + "&email=osvaldo.lara@redsalud.gob.cl&password=ME?F9yd#za2AmE%AM", Encoding.UTF8);
+                var formContent = new FormUrlEncodedContent(new[]
+                {
+                    new KeyValuePair<string, string>("_token", tokenlogin),
+                    new KeyValuePair<string, string>("email", "osvaldo.lara@redsalud.gob.cl"),
+                    new KeyValuePair<string, string>("password", "ME?9yd#za2AmE%AM")
+                });
 
-                //TODO DESCARGAR EL PDF
-                /*-----------------------------------llamado para descargar el pdf--------------------------------------------------------*/
-                var httpClientEME = _clientFactory.CreateClient("conexionEsmeralda");
-                WebClient cliente = new WebClient();
-                //cliente.BaseAddress = "https://monitorqa.apolosalud.net/login";
-                //cliente.Credentials = new NetworkCredential("osvaldo.lara@redsalud.gob.cl", "ME?9yd#za2AmE%AM");
-                cliente.DownloadFile("https://monitorqa.apolosalud.net/lab/print/250415"/* + sospechaActualizada.id*/, "C:\\Users\\Juan Andrés Nieto D\\Desktop\\PDFQL_250415.pdf");
-                /*-----------------------------------llamado para descargar el pdf--------------------------------------------------------*/
+                //tkLogin.Headers.ContentDisposition = new ContentDispositionHeaderValue("form-data");
+                //APIEME.DefaultRequestHeaders.Add("Set-Cookie", cookieXsrf);
+                //APIEME.DefaultRequestHeaders.Add("Set-Cookie", cookieSessionEME);
+                //APIEME.DefaultRequestHeaders.Add("Set-Cookie", cookieName + "=" + cookieNN);
+                ////tokenEME tokencall = new tokenEME() { _token= tokenlogin, email = "osvaldo.lara@redsalud.gob.cl", password = "ME?9yd#za2AmE%AM" };
+                ////HttpResponseMessage responseLogin = APIEME.PostAsJsonAsync("login", tokencall).Result;
+
+                HttpResponseMessage responseLogin = APIEME.PostAsync("login", formContent).Result;
+                IEnumerable<string> cookies = responseLogin.Headers.SingleOrDefault(header => header.Key == "Set-Cookie").Value;
+
+                HttpResponseMessage responsePDF = APIEME.GetAsync("lab/print/250415").Result;
+
+                var fs = new FileStream("C:\\Users\\Juan Andrés Nieto D\\Desktop\\PDFQL_250415.pdf", FileMode.CreateNew);
+                responsePDF.Content.CopyToAsync(fs);
+
+
+
 
                 var httpClient = _clientFactory.CreateClient("conexionApiMinsal");
                 httpClient.DefaultRequestHeaders.Add("ACCESSKEY", laboratorio.token_ws);
@@ -848,11 +852,10 @@ namespace WebService.Controllers
         {
             try
             {
-                HttpClient APIEME = new HttpClient();
-                APIEME.BaseAddress = new Uri("https://monitorqa.apolosalud.net/");
-                APIEME.DefaultRequestHeaders.Accept.Clear();
-                APIEME.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-                tokenEME tokencall = new tokenEME() { email = "osvaldo.lara@redsalud.gob.cl", password = "ME?9yd#za2AmE%AM" };
+                HttpClient APIEME = _clientFactory.CreateClient("conexionEsmeralda");
+                //APIEME.DefaultRequestHeaders.Accept.Clear();
+                //APIEME.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+                //tokenEME tokencall = new tokenEME() { email = "osvaldo.lara@redsalud.gob.cl", password = "ME?9yd#za2AmE%AM" };
                 HttpResponseMessage response = APIEME.GetAsync("login").Result;
                 APIEME.Dispose();
                 return response;
@@ -878,6 +881,22 @@ namespace WebService.Controllers
             }
             return tokenLogin;
         }
+
+        //public FileResult ImprimirOrden(string id)
+        //{
+        //    System.Net.WebClient client = new System.Net.WebClient();
+        //    System.Collections.Specialized.NameValueCollection reqparm = new System.Collections.Specialized.NameValueCollection();
+        //    reqparm.Add("correlativo", id);
+        //    reqparm.Add("tipoSolicitud", tipoSolicitud.ToString());
+        //    reqparm.Add("imprimeTimbre", "True");
+
+        //    var urlRpt = bd.HCE_GetServidorImpresion().First();
+        //    var user = Session["usuario"].ToString();
+        //    var token = bd.InsertarTokenImpresion(user).First();
+        //    byte[] responsebytes = client.UploadValues(urlRpt + "/Solicitario/SolicitudCentroApoyo/" + user + "/" + token + "/", "POST", reqparm);
+        //    System.IO.MemoryStream pdf = new System.IO.MemoryStream(responsebytes);
+        //    return File(pdf, "application/pdf");
+        //}
     }
 
     /// <summary>
