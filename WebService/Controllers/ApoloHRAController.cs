@@ -407,6 +407,7 @@ namespace WebService.Controllers
 
                 var httpClient = _clientFactory.CreateClient("conexionApiMinsal");
                 httpClient.DefaultRequestHeaders.Add("ACCESSKEY", laboratorio.token_ws);
+                var json = JsonConvert.SerializeObject(muestras);
                 HttpResponseMessage response = httpClient.PostAsJsonAsync("crearMuestras", muestras).Result;
                 List<respuestaMuestraMinsal> respuesta = response.Content.ReadAsAsync<List<respuestaMuestraMinsal>>().Result;
 
@@ -608,19 +609,42 @@ namespace WebService.Controllers
                 HttpResponseMessage responseLogin = APIEME.PostAsync("login", formContent).Result;
                 IEnumerable<string> cookies = responseLogin.Headers.SingleOrDefault(header => header.Key == "Set-Cookie").Value;
 
-                HttpResponseMessage responsePDF = APIEME.GetAsync("lab/print/250415").Result;
+                HttpResponseMessage responsePDF = APIEME.GetAsync("lab/print/"+ sospechaActualizada.id).Result;
 
-                var fs = new FileStream("C:\\Users\\Juan Andrés Nieto D\\Desktop\\PDFQL_250415.pdf", FileMode.CreateNew);
-                responsePDF.Content.CopyToAsync(fs);
+                //var fs = new FileStream("C:\\Users\\Juan Andrés Nieto D\\Desktop\\PDFQL_250415_2.pdf", FileMode.CreateNew);
+                var ms = new MemoryStream();
+                responsePDF.Content.CopyToAsync(ms);
+                var bytesPDF = ms.ToArray();
 
+                //TODO PASAR PDF A MEMORY STREAM
+
+                //fileBytes = new byte[ms.s];
 
 
 
                 var httpClient = _clientFactory.CreateClient("conexionApiMinsal");
                 httpClient.DefaultRequestHeaders.Add("ACCESSKEY", laboratorio.token_ws);
-                var json = JsonConvert.SerializeObject(resultado);
-                HttpResponseMessage response = httpClient.PostAsJsonAsync("entregaResultado", resultado).Result;
-                List<respuestaResultadoMinsal> respuesta = response.Content.ReadAsAsync<List<respuestaResultadoMinsal>>().Result;
+                var jsonResultado = JsonConvert.SerializeObject(resultado);
+                MultipartFormDataContent form = new MultipartFormDataContent();
+                HttpContent contentJsonResultado = new StringContent(jsonResultado);
+                form.Add(new ByteArrayContent(bytesPDF, 0, bytesPDF.Length), "Upfile", "document.pdf");
+                form.Add(contentJsonResultado, "parametros");
+
+                var json = JsonConvert.SerializeObject(form);
+
+                HttpResponseMessage response = httpClient.PostAsync("entregaResultado", form).Result;
+                string status = response.StatusCode.ToString();
+
+                if (status.Equals("OK") || status.Equals("NoContent"))
+                {
+                    respuestaResultadoMinsal respuesta = response.Content.ReadAsAsync<respuestaResultadoMinsal>().Result;
+                }
+                else
+                {
+                    //TODO guardar error MINSAL en BD esmeralda
+                }
+
+                
 
                 return Ok("Exito... se actualizo los resultado..");
             }
