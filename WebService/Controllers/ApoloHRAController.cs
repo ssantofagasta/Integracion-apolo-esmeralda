@@ -918,11 +918,11 @@ namespace WebService.Controllers
             }
             return tokenLogin;
         }
-
-        /// <summary>
-        /// Representa el caso de sospecha junto con la información del paciente.
-        /// </summary>
-        public class CasoResponse
+    }
+    /// <summary>
+    /// Representa el caso de sospecha junto con la información del paciente.
+    /// </summary>
+    public class CasoResponse
         {
             /// <summary>
             /// El caso de sospecha
@@ -938,6 +938,6 @@ namespace WebService.Controllers
             /// Los datos demográficos del paciente
             /// </summary>
             public demographics demografico { get; set; }
-        }
+        
     }
 }
