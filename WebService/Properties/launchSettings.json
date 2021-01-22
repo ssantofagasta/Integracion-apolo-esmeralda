@@ -1,0 +1,11 @@
+{
+  "profiles": {
+    "WebService": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIROMENT": "Development"
+      },
+      "applicationUrl": ""
+    }
+  }
+}
