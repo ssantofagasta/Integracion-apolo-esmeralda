@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace WebService.Models
 {
@@ -32,7 +32,14 @@ namespace WebService.Models
         /// RUN del usuario
         /// </summary>
         public int run { get; set; }
-        
+
+
+        /// <summary>
+        /// DV del usuario
+        /// </summary>
+        public char dv { get; set; }
+
+
         /// <summary>
         /// Identidad del laboratorio asignado al usuario.
         /// </summary>

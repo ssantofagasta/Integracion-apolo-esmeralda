@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.ComponentModel.DataAnnotations;
 
 namespace WebService.Models
@@ -32,5 +32,7 @@ namespace WebService.Models
         public long? user_id { get; set; }
         public DateTime? updated_at { get; set; }
         public DateTime? created_at { get; set; }
+        public long? minsal_ws_id { get; set; }
+        public string ws_minsal_message { get; set; }
     }
 }
