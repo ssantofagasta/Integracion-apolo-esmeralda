@@ -87,6 +87,8 @@ namespace WebService.Controllers
             try
             {
                 var cred = _db.users.FirstOrDefault(a => a.run == users.run);
+                //if()
+
                 return Ok(cred);
             }
             catch (Exception e)
@@ -388,7 +390,8 @@ namespace WebService.Controllers
                 {
                     codigo_muestra_cliente = suspectCase.id.ToString(),
                     id_laboratorio = laboratorio.id_openagora,
-                    rut_responsable = responsable.run + "-" + responsable.dv,
+                    //rut_responsable = responsable.run + "-" + responsable.dv,
+                    rut_responsable = "18014472-2",
                     paciente_tipodoc = tipodoc,
                     paciente_nombres = paciente.name,
                     paciente_ap_pat = paciente.fathers_family,
@@ -428,7 +431,12 @@ namespace WebService.Controllers
                 }
                 else
                 {
-                    //TODO guardar error MINSAL en BD esmeralda
+                    //Guardar error MINSAL en BD esmeralda
+                    errorMinsal error = response.Content.ReadAsAsync<errorMinsal>().Result;
+                    suspectCase = _db.suspect_cases.Find(suspectCase.id);
+                    suspectCase.ws_minsal_message = error.error;
+                    _db.suspect_cases.Update(suspectCase);
+                    _db.SaveChanges();                   
                 }
 
                 return Ok(suspectCase.id);
@@ -506,7 +514,12 @@ namespace WebService.Controllers
                 }
                 else
                 {
-                    //TODO guardar error MINSAL en BD esmeralda
+                    //Guardar error MINSAL en BD esmeralda
+                    errorMinsal error = response.Content.ReadAsAsync<errorMinsal>().Result;
+                    sospechaActualizada = _db.suspect_cases.Find(sospechaActualizada.id);
+                    sospechaActualizada.ws_minsal_message = error.error;
+                    _db.suspect_cases.Update(sospechaActualizada);
+                    _db.SaveChanges();
                 }
 
                 return Ok("Se Guardo correctamente...");
@@ -629,10 +642,19 @@ namespace WebService.Controllers
                 if (status.Equals("OK") || status.Equals("NoContent"))
                 {
                     respuestaResultadoMinsal respuesta = response.Content.ReadAsAsync<respuestaResultadoMinsal>().Result;
+                    sospechaActualizada = _db.suspect_cases.Find(sospechaActualizada.id);
+                    sospechaActualizada.ws_minsal_message = "Muestra informada";
+                    _db.suspect_cases.Update(sospechaActualizada);
+                    _db.SaveChanges();
                 }
                 else
                 {
-                    //TODO guardar error MINSAL en BD esmeralda
+                    //Guardar error MINSAL en BD esmeralda
+                    errorMinsal error = response.Content.ReadAsAsync<errorMinsal>().Result;
+                    sospechaActualizada = _db.suspect_cases.Find(sospechaActualizada.id);
+                    sospechaActualizada.ws_minsal_message = error.error;
+                    _db.suspect_cases.Update(sospechaActualizada);
+                    _db.SaveChanges();
                 }
                 return Ok("Exito... se actualizo los resultado..");
             }
@@ -642,8 +664,6 @@ namespace WebService.Controllers
                 return BadRequest("No se guardo correctamente....");
             }
         }
-
-
 
         /// <summary>
         /// Recupera el paciente dado un run u otro identificador
@@ -792,7 +812,6 @@ namespace WebService.Controllers
             return paciente;
         }
 
-
         /// <summary>
         /// Recupera el caso de sospecha con sus datos relacionados
         /// </summary>
@@ -859,8 +878,6 @@ namespace WebService.Controllers
             }
         }
 
-
-
         /// <summary>
         /// Se hace un Get al login de esmeralda para obtener el html del formulario
         /// </summary>
@@ -918,26 +935,5 @@ namespace WebService.Controllers
             }
             return tokenLogin;
         }
-    }
-    /// <summary>
-    /// Representa el caso de sospecha junto con la información del paciente.
-    /// </summary>
-    public class CasoResponse
-        {
-            /// <summary>
-            /// El caso de sospecha
-            /// </summary>
-            public Sospecha caso { get; set; }
-
-            /// <summary>
-            /// EL paciente asociado al caso
-            /// </summary>
-            public Patients paciente { get; set; }
-
-            /// <summary>
-            /// Los datos demográficos del paciente
-            /// </summary>
-            public demographics demografico { get; set; }
-        
     }
 }

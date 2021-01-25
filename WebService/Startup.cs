@@ -166,11 +166,6 @@ namespace WebService
             client.DefaultRequestHeaders.Accept.Clear();
             client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             client.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", "HttpClient");
-
-            //tokenEME tokencall = new tokenEME() { email = "osvaldo.lara@redsalud.gob.cl", password = "ME?9yd#za2AmE%AM" }; //P41n1975.003.HRA
-            //HttpResponseMessage response = client.PostAsJsonAsync("login", tokencall).Result;
-            //client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-            //client.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", "HttpClient");
         }
     }
 }

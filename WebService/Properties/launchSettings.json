@@ -1,9 +1,25 @@
 {
+  "iisSettings": {
+    "windowsAuthentication": false,
+    "anonymousAuthentication": true,
+    "iisExpress": {
+      "applicationUrl": "http://localhost:65054/",
+      "sslPort": 0
+    }
+  },
   "profiles": {
-    "WebService": {
+    "WebServiceQA": {
       "commandName": "Project",
       "environmentVariables": {
-        "ASPNETCORE_ENVIROMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": ""
+    },
+    "WebServiceProduction": {
+      "commandName": "Project",
+      //"launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Production"
       },
       "applicationUrl": ""
     }

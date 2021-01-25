@@ -33,5 +33,6 @@ namespace WebService.Models
         public DateTime? updated_at { get; set; }
         public DateTime? created_at { get; set; }
         public long? minsal_ws_id { get; set; }
+        public string ws_minsal_message { get; set; }
     }
 }
