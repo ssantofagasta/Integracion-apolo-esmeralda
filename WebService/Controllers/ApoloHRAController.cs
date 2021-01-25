@@ -390,8 +390,7 @@ namespace WebService.Controllers
                 {
                     codigo_muestra_cliente = suspectCase.id.ToString(),
                     id_laboratorio = laboratorio.id_openagora,
-                    //rut_responsable = responsable.run + "-" + responsable.dv,
-                    rut_responsable = "18014472-2",
+                    rut_responsable = responsable.run + "-" + responsable.dv,
                     paciente_tipodoc = tipodoc,
                     paciente_nombres = paciente.name,
                     paciente_ap_pat = paciente.fathers_family,
