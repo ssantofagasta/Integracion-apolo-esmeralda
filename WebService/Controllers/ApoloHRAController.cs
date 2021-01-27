@@ -346,7 +346,8 @@ namespace WebService.Controllers
 
                 //variables para obtener los datos solicitados por Minsal 
                 var paciente = _db.patients.Find(suspectCase.patient_id);
-                var demografia = _db.demographics.Find(paciente.id);
+                //var demografia = _db.demographics.Find(paciente.id);
+                var demografia = _db.demographics.Where(a => a.patient_id == paciente.id).FirstOrDefault();
                 var comuna = _db.communes.Find(demografia.commune_id);
                 var pais = _db.countries.Where(a => a.name == demografia.nationality).FirstOrDefault();
                 var laboratorio = _db.laboratories.Where(a => a.id == 2).FirstOrDefault();
@@ -629,11 +630,15 @@ namespace WebService.Controllers
                 httpClient.DefaultRequestHeaders.Add("ACCESSKEY", laboratorio.token_ws);
                 //Se arma el multipart/form-data con el json de el resultado y el pdf convertido para ser enviados a Minsal
                 var jsonResultado = JsonConvert.SerializeObject(resultado);
+
                 MultipartFormDataContent form = new MultipartFormDataContent();
+
                 HttpContent contentJsonResultado = new StringContent(jsonResultado);
+
                 form.Add(new ByteArrayContent(bytesPDF, 0, bytesPDF.Length), "upfile", "document.pdf");
                 form.Add(contentJsonResultado, "parametros");
                 var json = JsonConvert.SerializeObject(form);
+
                 HttpResponseMessage response = httpClient.PostAsync("entregaResultado", form).Result;
 
                 //Se obtiene el status del response para guardar el retorno en caso de error Minsal
@@ -885,7 +890,7 @@ namespace WebService.Controllers
         /// <response code="401">No autenticado</response>
         [HttpGet]
         [Authorize]
-        [Route("getResultadoPDF")]
+        [Route("getTokenLogin")]
         [ProducesResponseType(typeof(HttpResponseMessage), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
         public HttpResponseMessage GetTokenLogin()
