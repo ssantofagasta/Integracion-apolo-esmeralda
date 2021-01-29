@@ -139,12 +139,12 @@ namespace WebService
                     c.RoutePrefix = "apolohra/apidocs";
                 }
             );
-            app.UseHttpsRedirection();
+            //app.UseHttpsRedirection();
 
-            app.UseAuthentication();
+            //app.UseAuthentication();
             app.UseRouting();
             app.UseCors("CorsPolicy");
-            app.UseAuthorization();
+            //app.UseAuthorization();
 
             app.UseHealthChecks("/self", new HealthCheckOptions { Predicate = r => r.Name.Contains("self") });
             app.UseHealthChecks("/ready", new HealthCheckOptions { Predicate = r => r.Tags.Contains("service") });

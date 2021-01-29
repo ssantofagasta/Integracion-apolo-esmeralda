@@ -28,7 +28,7 @@ namespace WebService.Controllers
     [Route("[controller]")]
     [ApiController]
     //TODO DESCOMENTAR ESTO
-    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+    //[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     public class ApoloHRAController: ControllerBase
     {
         private readonly ILogger<ApoloHRAController> _logger;
@@ -77,8 +77,8 @@ namespace WebService.Controllers
         /// <response code="200">Devuelve la información del usuario</response>
         /// <response code="400">Mensaje descriptivo del error</response>
         [HttpPost]
-        //TODO DESCOMENTAR LOS [Authorize] del controlador
-        [Authorize] 
+        //TODO DESCOMENTAR LOS //[Authorize] del controlador
+        //[Authorize] 
         [Route("user")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(users))]
         [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(string))]
@@ -95,6 +95,47 @@ namespace WebService.Controllers
             {
                 _logger.LogError(e, "Usuario no encontrado user:{users}", users);
                 return BadRequest("Error.... Intente más tarde." + e);
+            }
+        }
+
+
+        /// <summary>
+        /// Recupera un usuario existente en el monitor 
+        /// </summary>
+        /// <remarks>
+        /// Recupera un usuario del monitor dado el RUN
+        /// 
+        /// Solicitud de ejemplo:
+        /// 
+        ///     POST /apolohra/user
+        ///     {
+        ///       "run": 12345678
+        ///     }
+        /// 
+        /// </remarks>       
+        /// <returns>retorna una lista de usuarios de esmeralda asociada al HRA</returns>
+        /// <response code="200">Devuelve la información del usuario</response>
+        /// <response code="400">Mensaje descriptivo del error</response>
+        [HttpGet]
+        //TODO DESCOMENTAR LOS //[Authorize] del controlador
+        //[Authorize] 
+        [Route("getUsers")]
+        [ProducesResponseType(typeof(List<users>),StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
+        public List<users> GetUsers()
+        {
+            try
+            {
+                List<users> usuarios = _db.users.Where(x => x.laboratory_id == 2).OrderBy(x => x.name).ToList();
+                return usuarios;
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "No se puede recuperar paciente:{buscador}");
+                HttpResponseMessage response = null;
+                List<users> usuarios = new List<users>();
+                return usuarios;
+                //return BadRequest("No se Encontro Paciente.... problema" + e);
             }
         }
 
@@ -117,7 +158,7 @@ namespace WebService.Controllers
         /// <response code="200">Identificador interno del paciente en el monitor</response>
         /// <response code="400">Mensaje descriptivo del error</response>
         [HttpPost]
-        [Authorize]
+        //[Authorize]
         [Route("getPatient_ID")]
         [ProducesResponseType(typeof(int?), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
@@ -168,7 +209,7 @@ namespace WebService.Controllers
         /// <response code="200">El identificador interno del paciente creado</response>
         /// <response code="400">Mensaje detallado del error</response>
         [HttpPost]
-        [Authorize]
+        //[Authorize]
         [Route("AddPatients")]
         [ProducesResponseType(typeof(int?), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
@@ -204,7 +245,7 @@ namespace WebService.Controllers
         /// <response code="400">Mensaje detallado del error</response>
         /// <response code="401">No está autenticado</response>
         [HttpPost]
-        [Authorize]
+        //[Authorize]
         [Route("getComuna")]
         [ProducesResponseType(typeof(Communes), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
@@ -255,7 +296,7 @@ namespace WebService.Controllers
         /// <response code="400">Mensaje detallado del error</response>
         /// <response code="401">No está autenticado</response>
         [HttpPost]
-        [Authorize]
+        //[Authorize]
         [Route("AddDemograph")]
         [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
@@ -310,7 +351,7 @@ namespace WebService.Controllers
         /// <response code="400">Mensaje detallado del error</response>
         /// <response code="401">No autenticado</response>
         [HttpPost]
-        [Authorize]
+        //[Authorize]
         [Route("addSospecha")]
         [ProducesResponseType(typeof(int?), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
@@ -470,7 +511,7 @@ namespace WebService.Controllers
         /// <response code="400">Mensaje detallado del error</response>
         /// <response code="401">No autenticado</response>
         [HttpPost]
-        [Authorize]
+        //[Authorize]
         [Route("recepcionMuestra")]
         [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
@@ -553,7 +594,7 @@ namespace WebService.Controllers
         /// <response code="400">Mensaje detallado del error</response>
         /// <response code="401">No autenticado</response>
         [HttpPost]
-        [Authorize]
+        //[Authorize]
         [Route("resultado")]
         [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
@@ -685,7 +726,7 @@ namespace WebService.Controllers
         /// <response code="400">Mensaje detallado del error</response>
         /// <response code="401">No autenticado</response>
         [HttpGet]
-        [Authorize]
+        //[Authorize]
         [Route("getPatients")]
         [ProducesResponseType(typeof(Patients), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
@@ -721,7 +762,7 @@ namespace WebService.Controllers
         /// <response code="400">Mensaje detallado del error</response>
         /// <response code="401">No autenticado</response>
         [HttpGet]
-        [Authorize]
+        //[Authorize]
         [Route("getSospecha")]
         [ProducesResponseType(typeof(List<Sospecha>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
@@ -785,7 +826,7 @@ namespace WebService.Controllers
         /// <response code="400">Mensaje detallado del error</response>
         /// <response code="401">No autenticado</response>
         [HttpGet]
-        [Authorize]
+        //[Authorize]
         [Route("getDemograph")]
         [ProducesResponseType(typeof(demographics), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
@@ -832,7 +873,7 @@ namespace WebService.Controllers
         /// <response code="400">Mensaje detallado del error</response>
         /// <response code="401">No autenticado</response>
         [HttpPost]
-        [Authorize]
+        //[Authorize]
         [Route("getSuspectCase")]
         [ProducesResponseType(typeof(CasoResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
@@ -889,7 +930,7 @@ namespace WebService.Controllers
         /// <response code="400">Mensaje detallado del error</response>
         /// <response code="401">No autenticado</response>
         [HttpGet]
-        [Authorize]
+        //[Authorize]
         [Route("getTokenLogin")]
         [ProducesResponseType(typeof(HttpResponseMessage), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
