@@ -98,7 +98,6 @@ namespace WebService.Controllers
             }
         }
 
-
         /// <summary>
         /// Recupera la lista de usuarios esmeralda asociados al HRA
         /// </summary>
