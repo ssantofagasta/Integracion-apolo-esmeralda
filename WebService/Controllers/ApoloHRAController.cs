@@ -98,6 +98,44 @@ namespace WebService.Controllers
             }
         }
 
+
+        /// <summary>
+        /// Recupera la lista de usuarios esmeralda asociados al HRA
+        /// </summary>
+        /// <remarks>
+        /// Recupera la lista de usuarios esmeralda asociados al HRA
+        /// 
+        /// Solicitud de ejemplo:
+        /// 
+        ///     GET /apolohra/getUsers
+        /// 
+        /// </remarks>       
+        /// <returns>retorna una lista de usuarios de esmeralda asociada al HRA</returns>
+        /// <response code="200">Devuelve la información del usuario</response>
+        /// <response code="400">Mensaje descriptivo del error</response>
+        [HttpGet]
+        //TODO DESCOMENTAR LOS [Authorize] del controlador
+        [Authorize] 
+        [Route("getUsers")]
+        [ProducesResponseType(typeof(List<users>),StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
+        public List<users> GetUsers()
+        {
+            try
+            {
+                List<users> usuarios = _db.users.Where(x => x.laboratory_id == 2).OrderBy(x => x.name).ToList();
+                return usuarios;
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "No se puede recuperar paciente:{buscador}");
+                HttpResponseMessage response = null;
+                List<users> usuarios = new List<users>();
+                return usuarios;
+                //return BadRequest("No se Encontro Paciente.... problema" + e);
+            }
+        }
+
         /// <summary>
         /// Recupera el identificador interno de un paciente en el monitor esmeralda.
         /// </summary>
@@ -390,6 +428,7 @@ namespace WebService.Controllers
                 muestras.Add(new muestraMinsal
                 {
                     codigo_muestra_cliente = suspectCase.id.ToString(),
+                    epivigila = suspectCase.epivigila.ToString(),
                     id_laboratorio = laboratorio.id_openagora,
                     rut_responsable = responsable.run + "-" + responsable.dv,
                     paciente_tipodoc = tipodoc,
@@ -417,7 +456,7 @@ namespace WebService.Controllers
                 var httpClient = _clientFactory.CreateClient("conexionApiMinsal");
                 httpClient.DefaultRequestHeaders.Add("ACCESSKEY", laboratorio.token_ws);
                 var json = JsonConvert.SerializeObject(muestras);
-                HttpResponseMessage response = httpClient.PostAsJsonAsync("crearMuestras", muestras).Result;
+                HttpResponseMessage response = httpClient.PostAsJsonAsync("crearMuestras_v2", muestras).Result;
 
                 //Se obtiene el status del response para guardar el retorno, ya sea la ID de muestra o el error Minsal
                 string status = response.StatusCode.ToString();
