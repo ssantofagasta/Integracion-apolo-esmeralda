@@ -383,7 +383,6 @@ namespace WebService.Controllers
 
                 //variables para obtener los datos solicitados por Minsal 
                 var paciente = _db.patients.Find(suspectCase.patient_id);
-                //var demografia = _db.demographics.Find(paciente.id);
                 var demografia = _db.demographics.Where(a => a.patient_id == paciente.id).FirstOrDefault();
                 var comuna = _db.communes.Find(demografia.commune_id);
                 var pais = _db.countries.Where(a => a.name == demografia.nationality).FirstOrDefault();
