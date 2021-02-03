@@ -100,17 +100,14 @@ namespace WebService.Controllers
 
 
         /// <summary>
-        /// Recupera un usuario existente en el monitor 
+        /// Recupera la lista de usuarios esmeralda asociados al HRA
         /// </summary>
         /// <remarks>
-        /// Recupera un usuario del monitor dado el RUN
+        /// Recupera la lista de usuarios esmeralda asociados al HRA
         /// 
         /// Solicitud de ejemplo:
         /// 
-        ///     POST /apolohra/user
-        ///     {
-        ///       "run": 12345678
-        ///     }
+        ///     GET /apolohra/getUsers
         /// 
         /// </remarks>       
         /// <returns>retorna una lista de usuarios de esmeralda asociada al HRA</returns>
