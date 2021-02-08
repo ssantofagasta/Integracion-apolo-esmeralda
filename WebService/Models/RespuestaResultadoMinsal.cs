@@ -2,8 +2,8 @@ using System.ComponentModel.DataAnnotations;
 
 namespace WebService.Models
 {
-    public class errorMinsal
+    public class RespuestaResultadoMinsal
     {
-        public string error { get; set; }
+        public string MENSAJE { get; set; }
     }
 }

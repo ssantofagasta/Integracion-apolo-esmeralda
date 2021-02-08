@@ -2,8 +2,8 @@ using System.ComponentModel.DataAnnotations;
 
 namespace WebService.Models
 {
-    public class recepcionMinsal
+    public class ErrorMinsal
     {
-        public long? id_muestra { get; set; }
+        public string error { get; set; }
     }
 }
