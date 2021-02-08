@@ -1,5 +1,3 @@
-using System.ComponentModel.DataAnnotations;
-
 namespace WebService.Models
 {
     public class respuestaMuestraMinsal

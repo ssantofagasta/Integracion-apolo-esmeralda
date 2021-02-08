@@ -1,5 +1,3 @@
-using System;
-using System.ComponentModel.DataAnnotations;
 using WebService.Request;
 
 namespace WebService.Models

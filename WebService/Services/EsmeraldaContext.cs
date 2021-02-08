@@ -1,6 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using WebService.Models;
-using WebService.Request;
 
 namespace WebService.Services
 {
