@@ -1,8 +1,6 @@
-using System.ComponentModel.DataAnnotations;
-
 namespace WebService.Models
 {
-    public class errorMinsal
+    public class ErrorMinsal
     {
         public string error { get; set; }
     }
