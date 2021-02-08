@@ -15,8 +15,6 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using WebService.Services;
-using WebService.Models;
-using System.Collections.Generic;
 
 namespace WebService
 {
@@ -124,7 +122,7 @@ namespace WebService
             //nuevo codigo conexion minsal 
             services.AddHttpClient("conexionApiMinsal", ConfigureClient);
 
-            services.AddHttpClient("conexionEsmeralda", ConfigureClientEME);
+            services.AddHttpClient("conexionEsmeralda", ConfigureClientEme);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -160,7 +158,7 @@ namespace WebService
             client.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", "HttpClient");
         }
 
-        private void ConfigureClientEME(HttpClient client)
+        private void ConfigureClientEme(HttpClient client)
         {
             client.BaseAddress = new Uri(Configuration["urlEsmeralda"]);
             client.DefaultRequestHeaders.Accept.Clear();

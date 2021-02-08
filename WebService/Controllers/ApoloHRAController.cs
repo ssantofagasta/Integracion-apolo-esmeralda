@@ -106,7 +106,7 @@ namespace WebService.Controllers
         }
 
         /// <summary>
-        /// Recupera la lista de usuarios esmeralda asociados al HRA
+        /// Recupera la lista de usuarios esmeralda asociados al laboratorio
         /// </summary>
         /// <remarks>
         /// Recupera la lista de usuarios esmeralda asociados al HRA
@@ -225,7 +225,7 @@ namespace WebService.Controllers
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Paciente no guasrdado, paciente:{patients}", patients);
+                _logger.LogError(e, "Paciente no guardado, paciente:{patients}", patients);
                 return BadRequest("Error.... Intente más tarde." + " Error:" + e);
             }
         }
