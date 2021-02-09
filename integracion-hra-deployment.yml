@@ -27,6 +27,10 @@ spec:
           env:
             - name: TZ
               value: Chile/Continental
+            - name: urlApiMinsal
+              value: https://tomademuestras.api.openagora.org/
+            - name: urlEsmeralda
+              value: https://monitorqa.apolosalud.net/
             - name: DB_SERVER
               value: /tmp/proxysql.sock
             - name: DB_USER
@@ -39,6 +43,16 @@ spec:
                 secretKeyRef:
                   name: monitor
                   key: password
+            - name: ESMERALDA_USER
+              valueFrom:
+                secretKeyRef:
+                    name: monitor
+                    key: esmeralda_user
+            - name: ESMERALDA_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                    name: monitor
+                    key: esmeralda_password
             - name: llavePrincipal
               valueFrom:
                 secretKeyRef:
