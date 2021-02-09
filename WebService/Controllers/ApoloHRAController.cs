@@ -2,9 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
-using System.Net.Http.Json;
 using System.IO;
-using System.Net.Http.Headers;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -16,9 +14,9 @@ using WebService.Models_HRA;
 using WebService.Request;
 using WebService.Services;
 using System.Net;
-using System.Web;
-using System.Text;
-using Microsoft.Extensions.Hosting.Internal;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 
 namespace WebService.Controllers
 {
@@ -34,17 +32,26 @@ namespace WebService.Controllers
         private readonly ILogger<ApoloHRAController> _logger;
         private readonly EsmeraldaContext _db;
         private readonly IHttpClientFactory _clientFactory;
+        private readonly IConfiguration _configuration;
 
         /// <summary>
         /// 
         /// </summary>
         /// <param name="logger"></param>
         /// <param name="db"></param>
-        public ApoloHRAController(ILogger<ApoloHRAController> logger, EsmeraldaContext db, IHttpClientFactory clientFactory)
+        /// <param name="clientFactory"></param>
+        /// <param name="configuration"></param>
+        public ApoloHRAController(
+            ILogger<ApoloHRAController> logger,
+            EsmeraldaContext db,
+            IHttpClientFactory clientFactory,
+            IConfiguration configuration
+        )
         {
             _logger = logger;
             _db = db;
             _clientFactory = clientFactory;
+            _configuration = configuration;
         }
 
         /// <summary>
@@ -99,7 +106,7 @@ namespace WebService.Controllers
         }
 
         /// <summary>
-        /// Recupera la lista de usuarios esmeralda asociados al HRA
+        /// Recupera la lista de usuarios esmeralda asociados al laboratorio
         /// </summary>
         /// <remarks>
         /// Recupera la lista de usuarios esmeralda asociados al HRA
@@ -108,7 +115,8 @@ namespace WebService.Controllers
         /// 
         ///     GET /apolohra/getUsers
         /// 
-        /// </remarks>       
+        /// </remarks>
+        /// <param name="laboratoryId">Identificador del laboratorio en el monitor</param>
         /// <returns>retorna una lista de usuarios de esmeralda asociada al HRA</returns>
         /// <response code="200">Devuelve la información del usuario</response>
         /// <response code="400">Mensaje descriptivo del error</response>
@@ -118,20 +126,17 @@ namespace WebService.Controllers
         [Route("getUsers")]
         [ProducesResponseType(typeof(List<users>),StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
-        public List<users> GetUsers()
+        public List<users> GetUsers(long laboratoryId)
         {
             try
             {
-                List<users> usuarios = _db.users.Where(x => x.laboratory_id == 2).OrderBy(x => x.name).ToList();
+                List<users> usuarios = _db.users.Where(x => x.laboratory_id == laboratoryId).OrderBy(x => x.name).ToList();
                 return usuarios;
             }
             catch (Exception e)
             {
                 _logger.LogError(e, "No se puede recuperar paciente:{buscador}");
-                HttpResponseMessage response = null;
-                List<users> usuarios = new List<users>();
-                return usuarios;
-                //return BadRequest("No se Encontro Paciente.... problema" + e);
+                return new List<users>();
             }
         }
 
@@ -220,7 +225,7 @@ namespace WebService.Controllers
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Paciente no guasrdado, paciente:{patients}", patients);
+                _logger.LogError(e, "Paciente no guardado, paciente:{patients}", patients);
                 return BadRequest("Error.... Intente más tarde." + " Error:" + e);
             }
         }
@@ -351,7 +356,7 @@ namespace WebService.Controllers
         [Route("addSospecha")]
         [ProducesResponseType(typeof(int?), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
-        public IActionResult AddSospecha([FromBody] Sospecha sospecha)
+        public async Task<IActionResult> AddSospecha([FromBody] Sospecha sospecha)
         {
             try
             {
@@ -374,45 +379,45 @@ namespace WebService.Controllers
                     establishment_id = sospecha.establishment_id,
                     user_id = sospecha.user_id,
                     created_at = sospecha.created_at,
-                    updated_at = sospecha.updated_at
+                    updated_at = sospecha.updated_at,
+                    laboratory_id = sospecha.laboratory_id
                 };
 
-                _db.suspect_cases.Add(suspectCase);
-                _db.SaveChanges();
+                await _db.suspect_cases.AddAsync(suspectCase);
+                await _db.SaveChangesAsync();
 
+                var laboratorio = await _db.laboratories.FirstOrDefaultAsync(a => a.id == sospecha.laboratory_id);
+
+                if (laboratorio == null) return BadRequest("Laboratorio no encontrado");
+
+                if (!laboratorio.minsal_ws) return Ok(suspectCase.id);
 
                 //variables para obtener los datos solicitados por Minsal 
-                var paciente = _db.patients.Find(suspectCase.patient_id);
-                var demografia = _db.demographics.Where(a => a.patient_id == paciente.id).FirstOrDefault();
-                var comuna = _db.communes.Find(demografia.commune_id);
-                var pais = _db.countries.Where(a => a.name == demografia.nationality).FirstOrDefault();
-                var laboratorio = _db.laboratories.Where(a => a.id == 2).FirstOrDefault();
-                var responsable = _db.users.Find(suspectCase.user_id);
-                var tipodoc = "";
-                var sexo = "";
+                var pacienteId = suspectCase.patient_id;
+                var paciente = await _db.patients.FindAsync(pacienteId);
+                var demografia = await _db.demographics.FirstOrDefaultAsync(a => a.patient_id == pacienteId);
+                var comuna = await _db.communes.FindAsync(demografia.commune_id);
+                var pais = await _db.countries.FirstOrDefaultAsync(a => a.name == demografia.nationality);
+                var responsable = await _db.users.FindAsync(suspectCase.user_id);
+                string tipodoc;
 
-                //El sexo del paciente desde esmeralda viene male o female, Minsal solo acepta M o F 
-                if (paciente.gender == "male")
-                {
-                    sexo = "M";
-                }
-                else
-                {
-                    sexo = "F";
-                }
                 //validacion para el tipo de documento
                 if (paciente.run != null)
                 {
-                    //si no tiene digito verificador se calcula
                     if (paciente.dv == null)
                     {
                         int suma = 0;
-                        for (int x = (paciente.run).ToString().Length; x >= 0; x--)
-                            suma += ((paciente.run).ToString()[x]) * ((((paciente.run).ToString().Length - x) % 6) + 2);
+                        var pacienteRun = paciente.run.ToString();
+                        var pacienteRunLength = pacienteRun.Length;
+                        
+                        for (int x = pacienteRunLength; x >= 0; x--)
+                            suma += (pacienteRun[x]) * (((pacienteRunLength - x) % 6) + 2);
+
                         int numericDigito = (11 - suma % 11);
-                        string digito = numericDigito == 11 ? "0" : numericDigito == 10 ? "K" : numericDigito.ToString();
+                        string digito = numericDigito == 11? "0": numericDigito == 10? "K": numericDigito.ToString();
                         paciente.dv = digito;
                     }
+
                     tipodoc = "RUN";
                 }
                 else
@@ -421,9 +426,9 @@ namespace WebService.Controllers
                 }
 
                 //comienzo de el armado de json para crear muestra en Minsal
-                List<muestraMinsal> muestras = new List<muestraMinsal>();
+                var muestras = new List<MuestraMinsal>();
 
-                muestras.Add(new muestraMinsal
+                muestras.Add(new MuestraMinsal
                 {
                     codigo_muestra_cliente = suspectCase.id.ToString(),
                     epivigila = suspectCase.epivigila.ToString(),
@@ -437,7 +442,7 @@ namespace WebService.Controllers
                     paciente_comuna = comuna.code_deis,
                     paciente_direccion = (demografia.address + " - " + demografia.number),
                     paciente_telefono = Convert.ToInt64(demografia.telephone),
-                    paciente_sexo = sexo,
+                    paciente_sexo = paciente.gender == "male"? "M": "F",
                     cod_deis = _db.establishments.Find(suspectCase.establishment_id).new_code_deis,
                     fecha_muestra = ((DateTime)suspectCase.sample_at).ToString("dd-MM-yyyyTHH:mm:ss"),
                     tecnica_muestra = "RT-PCR",
@@ -453,28 +458,23 @@ namespace WebService.Controllers
                 //conexion hacia el end point de Minsal
                 var httpClient = _clientFactory.CreateClient("conexionApiMinsal");
                 httpClient.DefaultRequestHeaders.Add("ACCESSKEY", laboratorio.token_ws);
-                var json = JsonConvert.SerializeObject(muestras);
-                HttpResponseMessage response = httpClient.PostAsJsonAsync("crearMuestras_v2", muestras).Result;
+                var response = await httpClient.PostAsJsonAsync("crearMuestras_v2", muestras);
 
                 //Se obtiene el status del response para guardar el retorno, ya sea la ID de muestra o el error Minsal
-                string status = response.StatusCode.ToString();
-                if (status.Equals("OK") || status.Equals("NoContent"))
+                switch (response.StatusCode)
                 {
-                    List<respuestaMuestraMinsal> respuesta = response.Content.ReadAsAsync<List<respuestaMuestraMinsal>>().Result;
-                    suspectCase = _db.suspect_cases.Find(suspectCase.id);
-                    suspectCase.minsal_ws_id = respuesta.First().id_muestra;
-                    _db.suspect_cases.Update(suspectCase);
-                    _db.SaveChanges();
+                    case HttpStatusCode.OK:
+                    case HttpStatusCode.NoContent:
+                        var respuesta = await response.Content.ReadAsAsync<List<respuestaMuestraMinsal>>();
+                        suspectCase.minsal_ws_id = respuesta.First().id_muestra;
+                        break;
+                    default:
+                        //Guardar error MINSAL en BD esmeralda
+                        var error = await response.Content.ReadAsAsync<ErrorMinsal>();
+                        suspectCase.ws_minsal_message = error.error;
+                        break;
                 }
-                else
-                {
-                    //Guardar error MINSAL en BD esmeralda
-                    errorMinsal error = response.Content.ReadAsAsync<errorMinsal>().Result;
-                    suspectCase = _db.suspect_cases.Find(suspectCase.id);
-                    suspectCase.ws_minsal_message = error.error;
-                    _db.suspect_cases.Update(suspectCase);
-                    _db.SaveChanges();                   
-                }
+                await _db.SaveChangesAsync();
 
                 return Ok(suspectCase.id);
             }
@@ -511,12 +511,11 @@ namespace WebService.Controllers
         [Route("recepcionMuestra")]
         [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
-        public IActionResult UdpateSospecha([FromBody] Sospecha sospecha)
+        public async Task<IActionResult> UdpateSospecha([FromBody] Sospecha sospecha)
         {
             try
             {
-
-                var sospechaActualizada = _db.suspect_cases.Find(sospecha.id);
+                var sospechaActualizada = await _db.suspect_cases.FindAsync(sospecha.id);
 
                 if (sospechaActualizada == null) return BadRequest("No se guardo correctamente....");
 
@@ -525,14 +524,19 @@ namespace WebService.Controllers
                 sospechaActualizada.laboratory_id = sospecha.laboratory_id;
                 sospechaActualizada.updated_at = sospecha.updated_at;
 
-                _db.SaveChanges();
+                await _db.SaveChangesAsync();
 
                 //Se obtiene el laboratorio para sacer el ACCESSKEY 
-                var laboratorio = _db.laboratories.Where(a => a.id == 2).FirstOrDefault();
-                //Se prepara el json de la recepcion con la id del Minsal
-                List<recepcionMinsal> recepcionesMinsal = new List<recepcionMinsal>();
+                var laboratorio = _db.laboratories.FirstOrDefault(a => a.id == sospechaActualizada.laboratory_id);
 
-                recepcionesMinsal.Add(new recepcionMinsal
+                if (laboratorio == null) return BadRequest("Laboratorio no encontrado");
+                
+                if(!laboratorio.minsal_ws) return Ok("Se Guardo correctamente...");
+                    
+                //Se prepara el json de la recepcion con la id del Minsal
+                var recepcionesMinsal = new List<RecepcionMinsal>();
+
+                recepcionesMinsal.Add(new RecepcionMinsal
                 {
                     id_muestra = sospechaActualizada.minsal_ws_id
                 });
@@ -540,23 +544,16 @@ namespace WebService.Controllers
                 //conexion hacia el end point de Minsal
                 var httpClient = _clientFactory.CreateClient("conexionApiMinsal");
                 httpClient.DefaultRequestHeaders.Add("ACCESSKEY", laboratorio.token_ws);
-                var json = JsonConvert.SerializeObject(recepcionesMinsal);
-                HttpResponseMessage response = httpClient.PostAsJsonAsync("recepcionarMuestra", recepcionesMinsal).Result;
+                var response = await httpClient.PostAsJsonAsync("recepcionarMuestra", recepcionesMinsal);
 
                 //Se obtiene el status del response para guardar el retorno en caso de error Minsal
-                string status = response.StatusCode.ToString();
-                if (status.Equals("OK") || status.Equals("NoContent"))
-                {
-                    List<respuestaMuestraMinsal> respuesta = response.Content.ReadAsAsync<List<respuestaMuestraMinsal>>().Result;
-                }
-                else
+                if (response.StatusCode != HttpStatusCode.OK &&
+                    response.StatusCode != HttpStatusCode.NoContent)
                 {
                     //Guardar error MINSAL en BD esmeralda
-                    errorMinsal error = response.Content.ReadAsAsync<errorMinsal>().Result;
-                    sospechaActualizada = _db.suspect_cases.Find(sospechaActualizada.id);
+                    var error = await response.Content.ReadAsAsync<ErrorMinsal>();
                     sospechaActualizada.ws_minsal_message = error.error;
-                    _db.suspect_cases.Update(sospechaActualizada);
-                    _db.SaveChanges();
+                    await _db.SaveChangesAsync();
                 }
 
                 return Ok("Se Guardo correctamente...");
@@ -594,7 +591,7 @@ namespace WebService.Controllers
         [Route("resultado")]
         [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
-        public IActionResult UdpateResultado([FromBody] Sospecha sospecha)
+        public async Task<IActionResult> UdpateResultado([FromBody] Sospecha sospecha)
         {
             try
             {
@@ -607,60 +604,50 @@ namespace WebService.Controllers
                 sospechaActualizada.validator_id = sospecha.validator_id;
                 sospechaActualizada.updated_at = sospecha.updated_at;
 
-                _db.SaveChanges();
+                await _db.SaveChangesAsync();
+
+                var laboratorio = await _db.laboratories.FirstOrDefaultAsync(a => a.id == sospechaActualizada.laboratory_id);
+
+                if (laboratorio == null) return BadRequest("Laboratorio no encontrado");
+                
+                if(!laboratorio.minsal_ws) return Ok("Exito... se actualizo los resultado..");
 
                 //El resultado desde esmeralda viene como negative, positive o rejected, en ese caso Minsal lo recibe como Positivo, Negativo o Muestra no apta
-                var resultadoEME = sospechaActualizada.pcr_sars_cov_2;
-                if (resultadoEME == "negative")
+                var resultadoEme = sospechaActualizada.pcr_sars_cov_2 switch
                 {
-                    resultadoEME = "Negativo";
-                }
-                else
-                {
-                    if (resultadoEME == "positive")
-                    {
-                        resultadoEME = "Positivo";
-                    }
-                    else
-                    {
-                        resultadoEME = "Muestra no apta";
-                    }
-                }
+                    "negative" => "Negativo",
+                    "positive" => "Positivo",
+                    _ => "Muestra no apta"
+                };
 
                 //Se obtiene el laboratorio para sacer el ACCESSKEY 
-                var laboratorio = _db.laboratories.Where(a => a.id == 2).FirstOrDefault();
+
                 //Se prepara el json del resultado
-                resultadoMinsal resultado = new resultadoMinsal
+                var resultado = new ResultadoMinsal
                 {
                     id_muestra = sospechaActualizada.minsal_ws_id,
-                    resultado = resultadoEME
+                    resultado = resultadoEme
                 };
 
                 //Se hace un get a esmeralda para obtener el token del formulario 
-                HttpResponseMessage tokenEME = GetTokenLogin();
-                //Aquí se obtiene el HTML del formulario de login
-                string stream = tokenEME.Content.ReadAsStringAsync().Result;
-                //Aqui se obtiene solo el valor del token 
-                string textoInicio = "<input type=\"hidden\" name=\"_token\" value=\"";
-                string textoFin = "\">";
-                string tokenlogin = "";
-                tokenlogin = GetTextoIntermedio(stream, textoInicio, textoFin);
+                var tokenLogin = await GetTokenLogin();
 
                 //conexion para iniciar sesion en esmeralda
-                HttpClient APIEME = _clientFactory.CreateClient("conexionEsmeralda");
+                var apiEme = _clientFactory.CreateClient("conexionEsmeralda");
                 var formContent = new FormUrlEncodedContent(new[]
                 {
-                    new KeyValuePair<string, string>("_token", tokenlogin),
-                    new KeyValuePair<string, string>("email", "osvaldo.lara@redsalud.gob.cl"),
-                    new KeyValuePair<string, string>("password", "ME?9yd#za2AmE%AM")
+                    new KeyValuePair<string, string>("_token", tokenLogin),
+                    new KeyValuePair<string, string>("email",  _configuration["ESMERALDA_USER"]),
+                    new KeyValuePair<string, string>("password", _configuration["ESMERALDA_PASSWORD"])
                 });
-                HttpResponseMessage responseLogin = APIEME.PostAsync("login", formContent).Result;
+                
+                await apiEme.PostAsync("login", formContent);
 
                 //Una vez logueados se obtiene el pdf de resultado de la muestra, se convierte a array de bytes para ser enviado
-                HttpResponseMessage responsePDF = APIEME.GetAsync("lab/print/" + sospechaActualizada.id).Result;
+                var responsePdf = await apiEme.GetAsync("lab/print/" + sospechaActualizada.id);
                 var ms = new MemoryStream();
-                responsePDF.Content.CopyToAsync(ms);
-                var bytesPDF = ms.ToArray();
+                await responsePdf.Content.CopyToAsync(ms);
+                var bytesPdf = ms.ToArray();
 
                 //conexion hacia el end point de Minsal
                 var httpClient = _clientFactory.CreateClient("conexionApiMinsal");
@@ -668,35 +655,31 @@ namespace WebService.Controllers
                 //Se arma el multipart/form-data con el json de el resultado y el pdf convertido para ser enviados a Minsal
                 var jsonResultado = JsonConvert.SerializeObject(resultado);
 
-                MultipartFormDataContent form = new MultipartFormDataContent();
+                var form = new MultipartFormDataContent();
+                var contentJsonResultado = new StringContent(jsonResultado);
 
-                HttpContent contentJsonResultado = new StringContent(jsonResultado);
-
-                form.Add(new ByteArrayContent(bytesPDF, 0, bytesPDF.Length), "upfile", "document.pdf");
+                form.Add(new ByteArrayContent(bytesPdf, 0, bytesPdf.Length), "upfile", "document.pdf");
                 form.Add(contentJsonResultado, "parametros");
-                var json = JsonConvert.SerializeObject(form);
 
-                HttpResponseMessage response = httpClient.PostAsync("entregaResultado", form).Result;
+                var response = await httpClient.PostAsync("entregaResultado", form);
 
                 //Se obtiene el status del response para guardar el retorno en caso de error Minsal
-                string status = response.StatusCode.ToString();
-                if (status.Equals("OK") || status.Equals("NoContent"))
+                switch (response.StatusCode)
                 {
-                    respuestaResultadoMinsal respuesta = response.Content.ReadAsAsync<respuestaResultadoMinsal>().Result;
-                    sospechaActualizada = _db.suspect_cases.Find(sospechaActualizada.id);
-                    sospechaActualizada.ws_minsal_message = "Muestra informada";
-                    _db.suspect_cases.Update(sospechaActualizada);
-                    _db.SaveChanges();
+                    case HttpStatusCode.OK:
+                    case HttpStatusCode.NoContent:
+                        await response.Content.ReadAsAsync<RespuestaResultadoMinsal>();
+                        sospechaActualizada.ws_pntm_mass_sending = false;
+                        sospechaActualizada.ws_minsal_message = "Muestra informada";
+                        break;
+                    default:
+                        //Guardar error MINSAL en BD esmeralda
+                        var error = await response.Content.ReadAsAsync<ErrorMinsal>();
+                        sospechaActualizada.ws_minsal_message = error.error;
+                        break;
                 }
-                else
-                {
-                    //Guardar error MINSAL en BD esmeralda
-                    errorMinsal error = response.Content.ReadAsAsync<errorMinsal>().Result;
-                    sospechaActualizada = _db.suspect_cases.Find(sospechaActualizada.id);
-                    sospechaActualizada.ws_minsal_message = error.error;
-                    _db.suspect_cases.Update(sospechaActualizada);
-                    _db.SaveChanges();
-                }
+                await _db.SaveChangesAsync();
+                
                 return Ok("Exito... se actualizo los resultado..");
             }
             catch (Exception e)
@@ -922,29 +905,25 @@ namespace WebService.Controllers
         /// <summary>
         /// Se hace un Get al login de esmeralda para obtener el html del formulario
         /// </summary>
-        /// <response code="200">Obtención del Html</response>
-        /// <response code="400">Mensaje detallado del error</response>
-        /// <response code="401">No autenticado</response>
-        [HttpGet]
-        [Authorize]
-        [Route("getTokenLogin")]
-        [ProducesResponseType(typeof(HttpResponseMessage), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
-        public HttpResponseMessage GetTokenLogin()
+        private async Task<string> GetTokenLogin()
         {
             try
             {
-                HttpClient APIEME = _clientFactory.CreateClient("conexionEsmeralda");
-                HttpResponseMessage response = APIEME.GetAsync("login").Result;
-                APIEME.Dispose();
-                return response;
+                var apiEme = _clientFactory.CreateClient("conexionEsmeralda");
+                var response = await apiEme.GetAsync("login");
+
+                var loginPage = await response.Content.ReadAsStringAsync();
+                const string textoInicio = "<input type=\"hidden\" name=\"_token\" value=\"";
+                const string textoFin = "\">";
+                var tokenlogin = GetTextoIntermedio(loginPage, textoInicio, textoFin);
+
+                apiEme.Dispose();
+                return tokenlogin;
             }
             catch (Exception e)
             {
                 _logger.LogError(e, "No se puede recuperar paciente:{buscador}");
-                HttpResponseMessage response = null;
-                return response;
-                //return BadRequest("No se Encontro Paciente.... problema" + e);
+                return null;
             }
         }
 
@@ -964,14 +943,14 @@ namespace WebService.Controllers
         /// <param name="textoCompleto">Texto completo</param>
         /// <param name="textoInicio">Texto de referencia para el incio de la separación</param>
         /// <param name="textoFin">Texto de referencia para el fin de la separación</param>
-        public string GetTextoIntermedio(string textoCompleto, string textoInicio, string textoFin)
+        private string GetTextoIntermedio(string textoCompleto, string textoInicio, string textoFin)
         {
             var tokenLogin = "";
             if (textoCompleto.Contains(textoInicio) && textoCompleto.Contains(textoFin))
             {
                 int inicio, fin;
-                inicio = textoCompleto.IndexOf(textoInicio, 0) + textoInicio.Length;
-                fin = textoCompleto.IndexOf(textoFin, inicio);
+                inicio = textoCompleto.IndexOf(textoInicio, 0, StringComparison.Ordinal) + textoInicio.Length;
+                fin = textoCompleto.IndexOf(textoFin, inicio, StringComparison.Ordinal);
                 tokenLogin = textoCompleto.Substring(inicio, fin - inicio);
             }
             return tokenLogin;

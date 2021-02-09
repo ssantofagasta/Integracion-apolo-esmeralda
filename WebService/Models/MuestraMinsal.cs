@@ -1,8 +1,6 @@
-using System.ComponentModel.DataAnnotations;
-
 namespace WebService.Models
 {
-    public class muestraMinsal
+    public class MuestraMinsal
     {
         public string codigo_muestra_cliente { get; set; }
         public string epivigila { get; set; }
