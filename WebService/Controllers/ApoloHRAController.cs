@@ -679,40 +679,6 @@ namespace WebService.Controllers
         }
 
         /// <summary>
-        /// Recupera el paciente dado un run u otro identificador
-        /// </summary>
-        /// <remarks>
-        /// Ejemplo de solicitud
-        ///
-        ///     GET /apolohra/getpatients
-        ///     "11111111"
-        /// 
-        /// </remarks>
-        /// <param name="buscador">RUN u otro identificador</param>
-        /// <returns>Paciente</returns>
-        /// <response code="200">Información del paciente</response>
-        /// <response code="400">Mensaje detallado del error</response>
-        /// <response code="401">No autenticado</response>
-        [HttpGet]
-        [Authorize]
-        [Route("getPatients")]
-        [ProducesResponseType(typeof(Patients), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
-        public IActionResult GetPatients([FromBody] string buscador)
-        {
-            try
-            {
-                var paciente = RecuperarPaciente(buscador);
-                return Ok(paciente);
-            }
-            catch (Exception e)
-            {
-                _logger.LogError(e, "No se puede recuperar paciente:{buscador}", buscador);
-                return BadRequest("No se Encontro Paciente.... problema" + e);
-            }
-        }
-
-        /// <summary>
         /// Recupera todos los casos de sospechas de un paciente.
         /// </summary>
         /// <remarks>
