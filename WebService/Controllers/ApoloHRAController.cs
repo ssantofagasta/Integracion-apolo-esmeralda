@@ -678,43 +678,6 @@ namespace WebService.Controllers
             }
         }
 
-        /// <summary>
-        /// Recupera los datos demográficos del paciente
-        /// </summary>
-        /// <remarks>
-        /// El parámetro de la solicitud debe ser el RUN sin digito verificador u otro
-        /// identificador (Pasaporte,etc)
-        /// Ejemplo de solicitud:
-        ///
-        ///     GET /apolohra/getdemograph
-        ///     "11111111"
-        /// 
-        /// </remarks>
-        /// <param name="buscador">RUN u otro identificador del paciente</param>
-        /// <returns>Datos demográficos del paciente</returns>
-        /// <response code="200">Datos demográficos del paciente</response>
-        /// <response code="400">Mensaje detallado del error</response>
-        /// <response code="401">No autenticado</response>
-        [HttpGet]
-        [Authorize]
-        [Route("getDemograph")]
-        [ProducesResponseType(typeof(demographics), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
-        public IActionResult GetDemograph([FromBody] string buscador)
-        {
-            try
-            {
-                var paciente = RecuperarPaciente(buscador);
-                var demographic = _db.demographics.FirstOrDefault(c => c.patient_id.Equals(paciente.id));
-                return Ok(demographic);
-            }
-            catch (Exception e)
-            {
-                _logger.LogError(e, "No se pudo recuperar demografico del paciente:{buscador}", buscador);
-                return BadRequest("No se Encontro sospecha.... problema" + e);
-            }
-        }
-
         private Patients RecuperarPaciente(string buscador)
         {
             var run = int.Parse(buscador);
