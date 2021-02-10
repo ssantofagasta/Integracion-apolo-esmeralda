@@ -678,18 +678,6 @@ namespace WebService.Controllers
             }
         }
 
-        private Patients RecuperarPaciente(string buscador)
-        {
-            var run = int.Parse(buscador);
-            var paciente = _db.patients.FirstOrDefault(c => c.run.Equals(run));
-            if (paciente == null)
-            {
-                paciente = _db.patients.FirstOrDefault(c => c.other_identification.Equals(buscador));
-            }
-
-            return paciente;
-        }
-
         /// <summary>
         /// Recupera el caso de sospecha con sus datos relacionados
         /// </summary>
