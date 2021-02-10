@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Net.Http;
 using System.IO;
@@ -27,6 +28,7 @@ namespace WebService.Controllers
     [ApiController]
     //TODO DESCOMENTAR ESTO
     [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+    [SuppressMessage("ReSharper", "InconsistentLogPropertyNaming")]
     public class ApoloHRAController: ControllerBase
     {
         private readonly ILogger<ApoloHRAController> _logger;
@@ -89,7 +91,7 @@ namespace WebService.Controllers
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Usuario no encontrado user:{users}", users);
+                _logger.LogError(e, "Usuario no encontrado user:{@users}", users);
                 return BadRequest("Error.... Intente más tarde." + e);
             }
         }
@@ -124,7 +126,7 @@ namespace WebService.Controllers
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "No se puede recuperar paciente:{buscador}");
+                _logger.LogError(e, "No se puede recuperar paciente:{long}",laboratoryId);
                 return new List<users>();
             }
         }
@@ -166,7 +168,7 @@ namespace WebService.Controllers
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Paciente no recuperado, paciente:{pa}", pa);
+                _logger.LogError(e, "Paciente no recuperado, paciente:{@pa}", pa);
                 return BadRequest("Error.... Intente más tarde." + e);
             }
         }
@@ -214,7 +216,7 @@ namespace WebService.Controllers
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Paciente no guardado, paciente:{patients}", patients);
+                _logger.LogError(e, "Paciente no guardado, @paciente:{@patients}", patients);
                 return BadRequest("Error.... Intente más tarde." + " Error:" + e);
             }
         }
@@ -300,7 +302,7 @@ namespace WebService.Controllers
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Demografico no agregado, demographics:{demographics}", demographics);
+                _logger.LogError(e, "Demografico no agregado, de@mographics:{@demographics}", demographics);
                 return BadRequest("Error.....Intente más Tarde" + e);
             }
         }
@@ -469,7 +471,7 @@ namespace WebService.Controllers
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Sospecha no agregada, sospecha:{sospecha}", sospecha);
+                _logger.LogError(e, "Sospecha no agregada, sospecha:{@sospecha}", sospecha);
                 return BadRequest("No se guardo correctamente...." + e);
             }
         }
@@ -549,7 +551,7 @@ namespace WebService.Controllers
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Sospecha no actualizada, sospeche:{sospecha}", sospecha);
+                _logger.LogError(e, "Sospecha no actualizada, sospeche:{@sospecha}", sospecha);
                 return BadRequest("No se guardo correctamente....");
             }
         }
@@ -673,7 +675,7 @@ namespace WebService.Controllers
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Resultado no actualizado, sospecha:{sospecha}", sospecha);
+                _logger.LogError(e, "Resultado no actualizado, sospecha:{@sospecha}", sospecha);
                 return BadRequest("No se guardo correctamente....");
             }
         }
@@ -764,7 +766,7 @@ namespace WebService.Controllers
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "No se puede recuperar paciente:{buscador}");
+                _logger.LogError(e, "No se puede recuperar token");
                 return null;
             }
         }
