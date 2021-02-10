@@ -55,17 +55,6 @@ namespace WebService.Controllers
         }
 
         /// <summary>
-        /// Usado para verificar que el servicio responde al llamado.
-        /// </summary>
-        /// <returns>Devuelve un valor verdadero si el servicio responde</returns>
-        [HttpGet]
-        [Route("echoping")]
-        public ActionResult<bool> EchoPing()
-        {
-            return Ok(true);
-        }
-
-        /// <summary>
         /// Recupera un usuario existente en el monitor 
         /// </summary>
         /// <remarks>
