@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Net.Http;
 using System.IO;
@@ -26,7 +27,8 @@ namespace WebService.Controllers
     [Route("[controller]")]
     [ApiController]
     //TODO DESCOMENTAR ESTO
-    //[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+    [SuppressMessage("ReSharper", "InconsistentLogPropertyNaming")]
     public class ApoloHRAController: ControllerBase
     {
         private readonly ILogger<ApoloHRAController> _logger;
@@ -55,17 +57,6 @@ namespace WebService.Controllers
         }
 
         /// <summary>
-        /// Usado para verificar que el servicio responde al llamado.
-        /// </summary>
-        /// <returns>Devuelve un valor verdadero si el servicio responde</returns>
-        [HttpGet]
-        [Route("echoping")]
-        public ActionResult<bool> EchoPing()
-        {
-            return Ok(true);
-        }
-
-        /// <summary>
         /// Recupera un usuario existente en el monitor 
         /// </summary>
         /// <remarks>
@@ -84,8 +75,8 @@ namespace WebService.Controllers
         /// <response code="200">Devuelve la información del usuario</response>
         /// <response code="400">Mensaje descriptivo del error</response>
         [HttpPost]
-        //TODO DESCOMENTAR LOS //[Authorize]  del controlador
-        //[Authorize]  
+        //TODO DESCOMENTAR LOS [Authorize] del controlador
+        [Authorize] 
         [Route("user")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(users))]
         [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(string))]
@@ -100,7 +91,7 @@ namespace WebService.Controllers
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Usuario no encontrado user:{users}", users);
+                _logger.LogError(e, "Usuario no encontrado user:{@users}", users);
                 return BadRequest("Error.... Intente más tarde." + e);
             }
         }
@@ -121,8 +112,8 @@ namespace WebService.Controllers
         /// <response code="200">Devuelve la información del usuario</response>
         /// <response code="400">Mensaje descriptivo del error</response>
         [HttpGet]
-        //TODO DESCOMENTAR LOS //[Authorize]  del controlador
-        //[Authorize]  
+        //TODO DESCOMENTAR LOS [Authorize] del controlador
+        [Authorize] 
         [Route("getUsers")]
         [ProducesResponseType(typeof(List<users>),StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
@@ -135,7 +126,7 @@ namespace WebService.Controllers
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "No se puede recuperar paciente:{buscador}");
+                _logger.LogError(e, "No se puede recuperar paciente:{long}",laboratoryId);
                 return new List<users>();
             }
         }
@@ -159,7 +150,7 @@ namespace WebService.Controllers
         /// <response code="200">Identificador interno del paciente en el monitor</response>
         /// <response code="400">Mensaje descriptivo del error</response>
         [HttpPost]
-        //[Authorize] 
+        [Authorize]
         [Route("getPatient_ID")]
         [ProducesResponseType(typeof(int?), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
@@ -177,7 +168,7 @@ namespace WebService.Controllers
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Paciente no recuperado, paciente:{pa}", pa);
+                _logger.LogError(e, "Paciente no recuperado, paciente:{@pa}", pa);
                 return BadRequest("Error.... Intente más tarde." + e);
             }
         }
@@ -210,7 +201,7 @@ namespace WebService.Controllers
         /// <response code="200">El identificador interno del paciente creado</response>
         /// <response code="400">Mensaje detallado del error</response>
         [HttpPost]
-        //[Authorize] 
+        [Authorize]
         [Route("AddPatients")]
         [ProducesResponseType(typeof(int?), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
@@ -225,7 +216,7 @@ namespace WebService.Controllers
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Paciente no guardado, paciente:{patients}", patients);
+                _logger.LogError(e, "Paciente no guardado, @paciente:{@patients}", patients);
                 return BadRequest("Error.... Intente más tarde." + " Error:" + e);
             }
         }
@@ -246,7 +237,7 @@ namespace WebService.Controllers
         /// <response code="400">Mensaje detallado del error</response>
         /// <response code="401">No está autenticado</response>
         [HttpPost]
-        //[Authorize] 
+        [Authorize]
         [Route("getComuna")]
         [ProducesResponseType(typeof(Communes), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
@@ -297,7 +288,7 @@ namespace WebService.Controllers
         /// <response code="400">Mensaje detallado del error</response>
         /// <response code="401">No está autenticado</response>
         [HttpPost]
-        //[Authorize] 
+        [Authorize]
         [Route("AddDemograph")]
         [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
@@ -311,7 +302,7 @@ namespace WebService.Controllers
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Demografico no agregado, demographics:{demographics}", demographics);
+                _logger.LogError(e, "Demografico no agregado, de@mographics:{@demographics}", demographics);
                 return BadRequest("Error.....Intente más Tarde" + e);
             }
         }
@@ -352,7 +343,7 @@ namespace WebService.Controllers
         /// <response code="400">Mensaje detallado del error</response>
         /// <response code="401">No autenticado</response>
         [HttpPost]
-        //[Authorize] 
+        [Authorize]
         [Route("addSospecha")]
         [ProducesResponseType(typeof(int?), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
@@ -480,7 +471,7 @@ namespace WebService.Controllers
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Sospecha no agregada, sospecha:{sospecha}", sospecha);
+                _logger.LogError(e, "Sospecha no agregada, sospecha:{@sospecha}", sospecha);
                 return BadRequest("No se guardo correctamente...." + e);
             }
         }
@@ -507,7 +498,7 @@ namespace WebService.Controllers
         /// <response code="400">Mensaje detallado del error</response>
         /// <response code="401">No autenticado</response>
         [HttpPost]
-        //[Authorize] 
+        [Authorize]
         [Route("recepcionMuestra")]
         [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
@@ -560,7 +551,7 @@ namespace WebService.Controllers
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Sospecha no actualizada, sospeche:{sospecha}", sospecha);
+                _logger.LogError(e, "Sospecha no actualizada, sospeche:{@sospecha}", sospecha);
                 return BadRequest("No se guardo correctamente....");
             }
         }
@@ -587,7 +578,7 @@ namespace WebService.Controllers
         /// <response code="400">Mensaje detallado del error</response>
         /// <response code="401">No autenticado</response>
         [HttpPost]
-        //[Authorize] 
+        [Authorize]
         [Route("resultado")]
         [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
@@ -684,156 +675,9 @@ namespace WebService.Controllers
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Resultado no actualizado, sospecha:{sospecha}", sospecha);
+                _logger.LogError(e, "Resultado no actualizado, sospecha:{@sospecha}", sospecha);
                 return BadRequest("No se guardo correctamente....");
             }
-        }
-
-        /// <summary>
-        /// Recupera el paciente dado un run u otro identificador
-        /// </summary>
-        /// <remarks>
-        /// Ejemplo de solicitud
-        ///
-        ///     GET /apolohra/getpatients
-        ///     "11111111"
-        /// 
-        /// </remarks>
-        /// <param name="buscador">RUN u otro identificador</param>
-        /// <returns>Paciente</returns>
-        /// <response code="200">Información del paciente</response>
-        /// <response code="400">Mensaje detallado del error</response>
-        /// <response code="401">No autenticado</response>
-        [HttpGet]
-        //[Authorize] 
-        [Route("getPatients")]
-        [ProducesResponseType(typeof(Patients), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
-        public IActionResult GetPatients([FromBody] string buscador)
-        {
-            try
-            {
-                var paciente = RecuperarPaciente(buscador);
-                return Ok(paciente);
-            }
-            catch (Exception e)
-            {
-                _logger.LogError(e, "No se puede recuperar paciente:{buscador}", buscador);
-                return BadRequest("No se Encontro Paciente.... problema" + e);
-            }
-        }
-
-        /// <summary>
-        /// Recupera todos los casos de sospechas de un paciente.
-        /// </summary>
-        /// <remarks>
-        /// El parámetro de la solicitud debe ser el RUN sin digito verificador u otro
-        /// identificador (Pasaporte,etc)
-        /// Ejemplo de solicitud:
-        ///
-        ///     GET /apolohra/getsospecha
-        ///     "11111111"
-        /// 
-        /// </remarks>
-        /// <param name="buscador">RUN o DNI del paciente a consultar</param>
-        /// <returns>Un listado con los casos de sospecha que el paciente tiene</returns>
-        /// <response code="200">Un listado con los casos de sospechas asociados al paciente</response>
-        /// <response code="400">Mensaje detallado del error</response>
-        /// <response code="401">No autenticado</response>
-        [HttpGet]
-        //[Authorize] 
-        [Route("getSospecha")]
-        [ProducesResponseType(typeof(List<Sospecha>), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
-        public IActionResult GetSospeha([FromBody] string buscador)
-        {
-            try
-            {
-                var paciente = RecuperarPaciente(buscador);
-                var sospecha = _db.suspect_cases.Where(c => c.patient_id.Equals(paciente.id))
-                                  .Select(
-                                       s => new Sospecha
-                                       {
-                                           id = s.id,
-                                           age = s.age,
-                                           gender = s.gender,
-                                           sample_at = s.sample_at,
-                                           epidemiological_week = s.epidemiological_week,
-                                           run_medic = s.run_medic,
-                                           symptoms = s.symptoms.HasValue ? s.symptoms.Value ? "Si" : "No" : "No",
-                                           pscr_sars_cov_2 = s.pcr_sars_cov_2,
-                                           pscr_sars_cov_2_at = s.pcr_sars_cov_2_at,
-                                           sample_type = s.sample_type,
-                                           epivigila = s.epivigila,
-                                           gestation = s.gestation,
-                                           gestation_week = s.gestation_week,
-                                           close_contact = s.close_contact,
-                                           functionary = s.functionary,
-                                           patient_id = s.patient_id,
-                                           establishment_id = s.establishment_id,
-                                           user_id = s.user_id,
-                                           created_at = s.created_at,
-                                           updated_at = s.updated_at,
-                                           symptoms_at = s.symptoms_at,
-                                           observation = s.observation
-                                       }
-                                   ).ToList();
-                return Ok(sospecha);
-            }
-            catch (Exception e)
-            {
-                _logger.LogError(e, "No se pudo recuperar sospecha del paciente:{buscador}", buscador);
-                return BadRequest("No se Encontro sospecha.... problema" + e);
-            }
-        }
-
-        /// <summary>
-        /// Recupera los datos demográficos del paciente
-        /// </summary>
-        /// <remarks>
-        /// El parámetro de la solicitud debe ser el RUN sin digito verificador u otro
-        /// identificador (Pasaporte,etc)
-        /// Ejemplo de solicitud:
-        ///
-        ///     GET /apolohra/getdemograph
-        ///     "11111111"
-        /// 
-        /// </remarks>
-        /// <param name="buscador">RUN u otro identificador del paciente</param>
-        /// <returns>Datos demográficos del paciente</returns>
-        /// <response code="200">Datos demográficos del paciente</response>
-        /// <response code="400">Mensaje detallado del error</response>
-        /// <response code="401">No autenticado</response>
-        [HttpGet]
-        //[Authorize] 
-        [Route("getDemograph")]
-        [ProducesResponseType(typeof(demographics), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
-        public IActionResult GetDemograph([FromBody] string buscador)
-        {
-            try
-            {
-                var paciente = RecuperarPaciente(buscador);
-                var demographic = _db.demographics.FirstOrDefault(c => c.patient_id.Equals(paciente.id));
-                return Ok(demographic);
-            }
-            catch (Exception e)
-            {
-                _logger.LogError(e, "No se pudo recuperar demografico del paciente:{buscador}", buscador);
-                return BadRequest("No se Encontro sospecha.... problema" + e);
-            }
-        }
-
-        private Patients RecuperarPaciente(string buscador)
-        {
-            var run = int.Parse(buscador);
-            var paciente = _db.patients.FirstOrDefault(c => c.run.Equals(run));
-            if (paciente == null)
-            {
-                paciente = _db.patients.FirstOrDefault(c => c.other_identification.Equals(buscador));
-            }
-
-            return paciente;
         }
 
         /// <summary>
@@ -852,7 +696,7 @@ namespace WebService.Controllers
         /// <response code="400">Mensaje detallado del error</response>
         /// <response code="401">No autenticado</response>
         [HttpPost]
-        //[Authorize] 
+        [Authorize]
         [Route("getSuspectCase")]
         [ProducesResponseType(typeof(CasoResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
@@ -922,7 +766,7 @@ namespace WebService.Controllers
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "No se puede recuperar paciente:{buscador}");
+                _logger.LogError(e, "No se puede recuperar token");
                 return null;
             }
         }
