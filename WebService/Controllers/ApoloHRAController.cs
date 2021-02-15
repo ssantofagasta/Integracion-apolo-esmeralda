@@ -353,31 +353,35 @@ namespace WebService.Controllers
             long? idEME = 0;
             try
             {
-                var suspectCase = new SuspectCase
+               SuspectCase suspectCase = _db.suspect_cases.FirstOrDefault(a => a.patient_id == sospecha.patient_id && a.sample_at == sospecha.sample_at);
+                if (suspectCase == null)
                 {
-                    age = sospecha.age,
-                    gender = sospecha.gender,// sexo del paciente
-                    sample_at = sospecha.sample_at, //fecha muestra
-                    epidemiological_week = sospecha.epidemiological_week,
-                    run_medic = sospecha.run_medic,//rut medico solicitante
-                    symptoms = sospecha.symptoms == "Si",
-                    pcr_sars_cov_2 = sospecha.pscr_sars_cov_2,
-                    sample_type = sospecha.sample_type,// tipo de muestra
-                    epivigila = sospecha.epivigila,
-                    gestation = sospecha.gestation,
-                    gestation_week = sospecha.gestation_week,
-                    close_contact = sospecha.close_contact,
-                    functionary = sospecha.functionary,
-                    patient_id = sospecha.patient_id,//rut del paciente
-                    establishment_id = sospecha.establishment_id,
-                    user_id = sospecha.user_id,
-                    created_at = sospecha.created_at,
-                    updated_at = sospecha.updated_at,
-                    laboratory_id = sospecha.laboratory_id
-                };
+                    suspectCase = new SuspectCase
+                    {
+                        age = sospecha.age,
+                        gender = sospecha.gender,// sexo del paciente
+                        sample_at = sospecha.sample_at, //fecha muestra
+                        epidemiological_week = sospecha.epidemiological_week,
+                        run_medic = sospecha.run_medic,//rut medico solicitante
+                        symptoms = sospecha.symptoms == "Si",
+                        pcr_sars_cov_2 = sospecha.pscr_sars_cov_2,
+                        sample_type = sospecha.sample_type,// tipo de muestra
+                        epivigila = sospecha.epivigila,
+                        gestation = sospecha.gestation,
+                        gestation_week = sospecha.gestation_week,
+                        close_contact = sospecha.close_contact,
+                        functionary = sospecha.functionary,
+                        patient_id = sospecha.patient_id,//rut del paciente
+                        establishment_id = sospecha.establishment_id,
+                        user_id = sospecha.user_id,
+                        created_at = sospecha.created_at,
+                        updated_at = sospecha.updated_at,
+                        laboratory_id = sospecha.laboratory_id
+                    };
+                    await _db.suspect_cases.AddAsync(suspectCase);
+                    await _db.SaveChangesAsync();
+                }
 
-                await _db.suspect_cases.AddAsync(suspectCase);
-                await _db.SaveChangesAsync();
                 idEME = suspectCase.id;
                 insercionEME = true;
                 //int variable = Convert.ToInt32(sospecha.gender);
