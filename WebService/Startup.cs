@@ -14,6 +14,7 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Serilog;
 using WebService.Services;
 
 namespace WebService
@@ -130,6 +131,8 @@ namespace WebService
         {
             if (env.IsDevelopment()) app.UseDeveloperExceptionPage();
 
+            app.UseSerilogRequestLogging();
+            
             app.UseSwagger(c => c.RouteTemplate = "apolohra/apidocs/{documentname}/docs.json");
             app.UseSwaggerUI(c =>
                 {
