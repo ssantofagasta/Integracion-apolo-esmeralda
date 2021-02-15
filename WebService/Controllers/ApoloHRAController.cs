@@ -75,8 +75,8 @@ namespace WebService.Controllers
         /// <response code="200">Devuelve la información del usuario</response>
         /// <response code="400">Mensaje descriptivo del error</response>
         [HttpPost]
-        //TODO DESCOMENTAR LOS [Authorize] del controlador
-        [Authorize] 
+        //TODO DESCOMENTAR LOS [Authorize]   del controlador
+        [Authorize]   
         [Route("user")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(users))]
         [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(string))]
@@ -112,10 +112,10 @@ namespace WebService.Controllers
         /// <response code="200">Devuelve la información del usuario</response>
         /// <response code="400">Mensaje descriptivo del error</response>
         [HttpGet]
-        //TODO DESCOMENTAR LOS [Authorize] del controlador
-        [Authorize] 
+        //TODO DESCOMENTAR LOS [Authorize]   del controlador
+        [Authorize]   
         [Route("getUsers")]
-        [ProducesResponseType(typeof(List<users>),StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(List<users>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
         public List<users> GetUsers(long laboratoryId)
         {
@@ -126,7 +126,7 @@ namespace WebService.Controllers
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "No se puede recuperar paciente:{long}",laboratoryId);
+                _logger.LogError(e, "No se puede recuperar paciente:{long}", laboratoryId);
                 return new List<users>();
             }
         }
@@ -150,7 +150,7 @@ namespace WebService.Controllers
         /// <response code="200">Identificador interno del paciente en el monitor</response>
         /// <response code="400">Mensaje descriptivo del error</response>
         [HttpPost]
-        [Authorize]
+        [Authorize]  
         [Route("getPatient_ID")]
         [ProducesResponseType(typeof(int?), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
@@ -201,7 +201,7 @@ namespace WebService.Controllers
         /// <response code="200">El identificador interno del paciente creado</response>
         /// <response code="400">Mensaje detallado del error</response>
         [HttpPost]
-        [Authorize]
+        [Authorize]  
         [Route("AddPatients")]
         [ProducesResponseType(typeof(int?), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
@@ -237,7 +237,7 @@ namespace WebService.Controllers
         /// <response code="400">Mensaje detallado del error</response>
         /// <response code="401">No está autenticado</response>
         [HttpPost]
-        [Authorize]
+        [Authorize]  
         [Route("getComuna")]
         [ProducesResponseType(typeof(Communes), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
@@ -288,7 +288,7 @@ namespace WebService.Controllers
         /// <response code="400">Mensaje detallado del error</response>
         /// <response code="401">No está autenticado</response>
         [HttpPost]
-        [Authorize]
+        [Authorize]  
         [Route("AddDemograph")]
         [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
@@ -343,12 +343,14 @@ namespace WebService.Controllers
         /// <response code="400">Mensaje detallado del error</response>
         /// <response code="401">No autenticado</response>
         [HttpPost]
-        [Authorize]
+        [Authorize]  
         [Route("addSospecha")]
         [ProducesResponseType(typeof(int?), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> AddSospecha([FromBody] Sospecha sospecha)
         {
+            var insercionEME = false;
+            long? idEME = 0;
             try
             {
                 var suspectCase = new SuspectCase
@@ -376,6 +378,9 @@ namespace WebService.Controllers
 
                 await _db.suspect_cases.AddAsync(suspectCase);
                 await _db.SaveChangesAsync();
+                idEME = suspectCase.id;
+                insercionEME = true;
+                //int variable = Convert.ToInt32(sospecha.gender);
 
                 var laboratorio = await _db.laboratories.FirstOrDefaultAsync(a => a.id == sospecha.laboratory_id);
 
@@ -400,12 +405,12 @@ namespace WebService.Controllers
                         int suma = 0;
                         var pacienteRun = paciente.run.ToString();
                         var pacienteRunLength = pacienteRun.Length;
-                        
+
                         for (int x = pacienteRunLength; x >= 0; x--)
                             suma += (pacienteRun[x]) * (((pacienteRunLength - x) % 6) + 2);
 
                         int numericDigito = (11 - suma % 11);
-                        string digito = numericDigito == 11? "0": numericDigito == 10? "K": numericDigito.ToString();
+                        string digito = numericDigito == 11 ? "0" : numericDigito == 10 ? "K" : numericDigito.ToString();
                         paciente.dv = digito;
                     }
 
@@ -419,8 +424,7 @@ namespace WebService.Controllers
                 //comienzo de el armado de json para crear muestra en Minsal
                 var muestras = new List<MuestraMinsal>();
 
-                muestras.Add(new MuestraMinsal
-                {
+                muestras.Add(new MuestraMinsal{
                     codigo_muestra_cliente = suspectCase.id.ToString(),
                     epivigila = suspectCase.epivigila.ToString(),
                     id_laboratorio = laboratorio.id_openagora,
@@ -432,8 +436,8 @@ namespace WebService.Controllers
                     paciente_fecha_nac = ((DateTime)paciente.birthday).ToString("dd-MM-yyyy"),
                     paciente_comuna = comuna.code_deis,
                     paciente_direccion = (demografia.address + " - " + demografia.number),
-                    paciente_telefono = Convert.ToInt64(demografia.telephone),
-                    paciente_sexo = paciente.gender == "male"? "M": "F",
+                    paciente_telefono = demografia.telephone,
+                    paciente_sexo = paciente.gender == "male" ? "M" : "F",
                     cod_deis = _db.establishments.Find(suspectCase.establishment_id).new_code_deis,
                     fecha_muestra = ((DateTime)suspectCase.sample_at).ToString("dd-MM-yyyyTHH:mm:ss"),
                     tecnica_muestra = "RT-PCR",
@@ -471,8 +475,18 @@ namespace WebService.Controllers
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Sospecha no agregada, sospecha:{@sospecha}", sospecha);
-                return BadRequest("No se guardo correctamente...." + e);
+                if (insercionEME)
+                {
+                    var suspectCase = await _db.suspect_cases.FindAsync(idEME);
+                    suspectCase.ws_minsal_message = "Error WS: no se hizo inserción en MINSAL";
+                    await _db.SaveChangesAsync();
+                    return Ok(idEME);
+                }
+                else
+                {
+                    _logger.LogError(e, "Sospecha no agregada, sospecha:{@sospecha}", sospecha);
+                    return BadRequest("No se guardo correctamente...." + e);
+                }
             }
         }
 
@@ -498,7 +512,7 @@ namespace WebService.Controllers
         /// <response code="400">Mensaje detallado del error</response>
         /// <response code="401">No autenticado</response>
         [HttpPost]
-        [Authorize]
+        [Authorize]  
         [Route("recepcionMuestra")]
         [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
@@ -521,9 +535,9 @@ namespace WebService.Controllers
                 var laboratorio = _db.laboratories.FirstOrDefault(a => a.id == sospechaActualizada.laboratory_id);
 
                 if (laboratorio == null) return BadRequest("Laboratorio no encontrado");
-                
-                if(!laboratorio.minsal_ws) return Ok("Se Guardo correctamente...");
-                    
+
+                if (!laboratorio.minsal_ws) return Ok("Se Guardo correctamente...");
+
                 //Se prepara el json de la recepcion con la id del Minsal
                 var recepcionesMinsal = new List<RecepcionMinsal>();
 
@@ -578,7 +592,7 @@ namespace WebService.Controllers
         /// <response code="400">Mensaje detallado del error</response>
         /// <response code="401">No autenticado</response>
         [HttpPost]
-        [Authorize]
+        [Authorize]  
         [Route("resultado")]
         [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
@@ -600,8 +614,8 @@ namespace WebService.Controllers
                 var laboratorio = await _db.laboratories.FirstOrDefaultAsync(a => a.id == sospechaActualizada.laboratory_id);
 
                 if (laboratorio == null) return BadRequest("Laboratorio no encontrado");
-                
-                if(!laboratorio.minsal_ws) return Ok("Exito... se actualizo los resultado..");
+
+                if (!laboratorio.minsal_ws) return Ok("Exito... se actualizo los resultado..");
 
                 //El resultado desde esmeralda viene como negative, positive o rejected, en ese caso Minsal lo recibe como Positivo, Negativo o Muestra no apta
                 var resultadoEme = sospechaActualizada.pcr_sars_cov_2 switch
@@ -631,7 +645,7 @@ namespace WebService.Controllers
                     new KeyValuePair<string, string>("email",  _configuration["ESMERALDA_USER"]),
                     new KeyValuePair<string, string>("password", _configuration["ESMERALDA_PASSWORD"])
                 });
-                
+
                 await apiEme.PostAsync("login", formContent);
 
                 //Una vez logueados se obtiene el pdf de resultado de la muestra, se convierte a array de bytes para ser enviado
@@ -670,7 +684,7 @@ namespace WebService.Controllers
                         break;
                 }
                 await _db.SaveChangesAsync();
-                
+
                 return Ok("Exito... se actualizo los resultado..");
             }
             catch (Exception e)
@@ -696,7 +710,7 @@ namespace WebService.Controllers
         /// <response code="400">Mensaje detallado del error</response>
         /// <response code="401">No autenticado</response>
         [HttpPost]
-        [Authorize]
+        [Authorize]  
         [Route("getSuspectCase")]
         [ProducesResponseType(typeof(CasoResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
@@ -799,5 +813,56 @@ namespace WebService.Controllers
             }
             return tokenLogin;
         }
+
+
+        /// <summary>
+        /// Recupera los datos demográficos del paciente
+        /// </summary>
+        /// <remarks>
+        /// El parámetro de la solicitud debe ser el RUN sin digito verificador u otro
+        /// identificador (Pasaporte,etc)
+        /// Ejemplo de solicitud:
+        ///
+        ///     GET /apolohra/getdemograph
+        ///     "11111111"
+        /// 
+        /// </remarks>
+        /// <param name="buscador">RUN u otro identificador del paciente</param>
+        /// <returns>Datos demográficos del paciente</returns>
+        /// <response code="200">Datos demográficos del paciente</response>
+        /// <response code="400">Mensaje detallado del error</response>
+        /// <response code="401">No autenticado</response>
+        [HttpPost]
+        [Authorize] 
+        [Route("getDemograph")]
+        [ProducesResponseType(typeof(demographics), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
+        public IActionResult GetDemograph([FromBody] string buscador)
+        {
+            try
+            {
+                var paciente = RecuperarPaciente(buscador);
+                var demographic = _db.demographics.FirstOrDefault(c => c.patient_id.Equals(paciente.id));
+                return Ok(demographic);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "No se pudo recuperar demografico del paciente:{buscador}", buscador);
+                return BadRequest("No se Encontro sospecha.... problema" + e);
+            }
+        }
+
+        private Patients RecuperarPaciente(string buscador)
+        {
+            var run = int.Parse(buscador);
+            var paciente = _db.patients.FirstOrDefault(c => c.run.Equals(run));
+            if (paciente == null)
+            {
+                paciente = _db.patients.FirstOrDefault(c => c.other_identification.Equals(buscador));
+            }
+
+            return paciente;
+        }
+
     }
 }
