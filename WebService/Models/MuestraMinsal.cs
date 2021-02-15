@@ -13,7 +13,7 @@ namespace WebService.Models
         public string paciente_fecha_nac { get; set; }
         public string paciente_comuna { get; set; }
         public string paciente_direccion { get; set; }
-        public long paciente_telefono { get; set; }
+        public string paciente_telefono { get; set; }
         public string paciente_sexo { get; set; }
         public string cod_deis { get; set; }
         public string fecha_muestra { get; set; }
