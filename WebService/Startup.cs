@@ -8,12 +8,15 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Serilog;
+using Serilog.Events;
 using WebService.Services;
 
 namespace WebService
@@ -29,7 +32,7 @@ namespace WebService
 
         public void ConfigureServices(IServiceCollection services)
         {
-
+            services.AddLogging();
             services.AddControllers();
             services.AddDbContext<EsmeraldaContext>(
                 options => options.AddMysqlDb(Configuration)
@@ -69,7 +72,11 @@ namespace WebService
                          }
                      );
 
-            services.AddControllers();
+            services.AddControllers(
+                options =>
+                {
+                    options.Filters.Add<LogActionFilter>();
+                });
 
             services.AddRouting(o => o.LowercaseUrls = true);
 
@@ -130,6 +137,13 @@ namespace WebService
         {
             if (env.IsDevelopment()) app.UseDeveloperExceptionPage();
 
+            app.UseSerilogRequestLogging(
+                options =>
+                {
+                    options.EnrichDiagnosticContext = EnrichDiagnosticContext;
+                    options.GetLevel = ExcludeHealthChecks;
+                } );
+            
             app.UseSwagger(c => c.RouteTemplate = "apolohra/apidocs/{documentname}/docs.json");
             app.UseSwaggerUI(c =>
                 {
@@ -148,6 +162,53 @@ namespace WebService
             app.UseHealthChecks("/ready", new HealthCheckOptions { Predicate = r => r.Tags.Contains("service") });
 
             app.UseEndpoints(endpoints => { endpoints.MapControllers(); });
+        }
+
+        private LogEventLevel ExcludeHealthChecks(HttpContext httpContext, double _, Exception ex)
+        {
+            return ex != null
+                ? LogEventLevel.Error 
+                : httpContext.Response.StatusCode > 499 
+                    ? LogEventLevel.Error 
+                    : IsHealthCheckEndpoint(httpContext) // Not an error, check if it was a health check
+                        ? LogEventLevel.Verbose // Was a health check, use Verbose
+                        : LogEventLevel.Information;
+        }
+
+        private bool IsHealthCheckEndpoint(HttpContext httpContext)
+        {
+            var endpoint = httpContext.GetEndpoint();
+            if (endpoint is object) // same as !(endpoint is null)
+            {
+                return string.Equals(
+                    endpoint.DisplayName, 
+                    "Health checks",
+                    StringComparison.Ordinal);
+            }
+            // No endpoint, so not a health check endpoint
+            return false;
+        }
+
+        private void EnrichDiagnosticContext(IDiagnosticContext diagnosticContext, HttpContext httpContext)
+        {
+            var request = httpContext.Request;
+
+            diagnosticContext.Set("Host", request.Host);
+            diagnosticContext.Set("Protocol", request.Protocol);
+            diagnosticContext.Set("Scheme", request.Scheme);
+
+            if(request.QueryString.HasValue)
+            {
+                diagnosticContext.Set("QueryString", request.QueryString.Value);
+            }
+
+            diagnosticContext.Set("ContentType", httpContext.Response.ContentType);
+
+            var endpoint = httpContext.GetEndpoint();
+            if (endpoint is object) // endpoint != null
+            {
+                diagnosticContext.Set("EndpointName", endpoint.DisplayName);
+            }            
         }
 
         //metodo para conexion minsal
