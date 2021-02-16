@@ -350,11 +350,10 @@ namespace WebService.Controllers
         [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> AddSospecha([FromBody] Sospecha sospecha)
         {
-            var insercionEME = false;
-            long? idEME = 0;
+            SuspectCase suspectCase = null;
             try
             {
-               SuspectCase suspectCase = _db.suspect_cases.FirstOrDefault(a => a.patient_id == sospecha.patient_id && a.sample_at == sospecha.sample_at);
+                suspectCase = _db.suspect_cases.FirstOrDefault(a => a.patient_id == sospecha.patient_id && a.sample_at == sospecha.sample_at);
                 if (suspectCase == null)
                 {
                     suspectCase = new SuspectCase
@@ -382,10 +381,6 @@ namespace WebService.Controllers
                     await _db.suspect_cases.AddAsync(suspectCase);
                     await _db.SaveChangesAsync();
                 }
-
-                idEME = suspectCase.id;
-                insercionEME = true;
-                //int variable = Convert.ToInt32(sospecha.gender);
 
                 var laboratorio = await _db.laboratories.FirstOrDefaultAsync(a => a.id == sospecha.laboratory_id);
 
@@ -480,18 +475,16 @@ namespace WebService.Controllers
             }
             catch (Exception e)
             {
-                if (insercionEME)
+                _logger.LogError(e, "Sospecha no agregada, sospecha:{@sospecha}", sospecha);
+                
+                if (suspectCase?.id != null)
                 {
-                    var suspectCase = await _db.suspect_cases.FindAsync(idEME);
                     suspectCase.ws_minsal_message = "Error WS: no se tributó en MINSAL";
                     await _db.SaveChangesAsync();
-                    return BadRequest(idEME);
+                    return BadRequest(suspectCase.id);
                 }
-                else
-                {
-                    _logger.LogError(e, "Sospecha no agregada, sospecha:{@sospecha}", sospecha);
-                    return BadRequest("No se guardo correctamente...." + e);
-                }
+
+                return BadRequest("No se guardo correctamente...." + e);
             }
         }
 
