@@ -21,6 +21,7 @@ using Microsoft.Extensions.Configuration;
 
 namespace WebService.Controllers
 {
+
     /// <summary>
     /// 
     /// </summary>
@@ -482,9 +483,9 @@ namespace WebService.Controllers
                 if (insercionEME)
                 {
                     var suspectCase = await _db.suspect_cases.FindAsync(idEME);
-                    suspectCase.ws_minsal_message = "Error WS: no se hizo inserción en MINSAL";
+                    suspectCase.ws_minsal_message = "Error WS: no se tributó en MINSAL";
                     await _db.SaveChangesAsync();
-                    return Ok(idEME);
+                    return BadRequest(idEME);
                 }
                 else
                 {
