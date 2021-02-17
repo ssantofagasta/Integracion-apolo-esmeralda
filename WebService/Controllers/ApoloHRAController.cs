@@ -291,11 +291,35 @@ namespace WebService.Controllers
         [Route("AddDemograph")]
         [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
-        public IActionResult AddDemograph([FromBody] demographics demographics)
+        public async Task<IActionResult> AddDemograph([FromBody] demographics demographics)
         {
             try
             {
-                _db.demographics.Add(demographics);
+                var patientDemographics =
+                    await _db.demographics.FirstOrDefaultAsync(d => d.patient_id == demographics.patient_id);
+
+                if (patientDemographics == null)
+                {
+                    patientDemographics = new demographics();
+                    patientDemographics.patient_id = demographics.patient_id;
+                    patientDemographics.created_at = demographics.created_at;
+                }
+
+                patientDemographics.address = demographics.address;
+                patientDemographics.city = demographics.city;
+                patientDemographics.commune_id = demographics.commune_id;
+                patientDemographics.department = demographics.department;
+                patientDemographics.email = demographics.email;
+                patientDemographics.nationality = demographics.nationality;
+                patientDemographics.number = demographics.number;
+                patientDemographics.region_id = demographics.region_id;
+                patientDemographics.street_type = demographics.street_type;
+                patientDemographics.suburb = demographics.suburb;
+                patientDemographics.telephone = demographics.telephone;
+                patientDemographics.telephone2 = demographics.telephone2;
+                patientDemographics.updated_at = demographics.updated_at;
+
+                _db.demographics.Update(demographics);
                 _db.SaveChanges();
                 return Ok("Se Guardo Correctamente la Demografía");
             }
