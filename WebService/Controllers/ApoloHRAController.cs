@@ -21,10 +21,10 @@ using Microsoft.Extensions.Configuration;
 
 namespace WebService.Controllers
 {
-
     /// <summary>
     /// 
     /// </summary>
+    /// 
     [Route("[controller]")]
     [ApiController]
     //TODO DESCOMENTAR ESTO
@@ -76,8 +76,7 @@ namespace WebService.Controllers
         /// <response code="200">Devuelve la información del usuario</response>
         /// <response code="400">Mensaje descriptivo del error</response>
         [HttpPost]
-        //TODO DESCOMENTAR LOS [Authorize]   del controlador
-        [Authorize]   
+        [Authorize]
         [Route("user")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(users))]
         [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(string))]
@@ -113,8 +112,7 @@ namespace WebService.Controllers
         /// <response code="200">Devuelve la información del usuario</response>
         /// <response code="400">Mensaje descriptivo del error</response>
         [HttpGet]
-        //TODO DESCOMENTAR LOS [Authorize]   del controlador
-        [Authorize]   
+        [Authorize]
         [Route("getUsers")]
         [ProducesResponseType(typeof(List<users>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
@@ -151,7 +149,7 @@ namespace WebService.Controllers
         /// <response code="200">Identificador interno del paciente en el monitor</response>
         /// <response code="400">Mensaje descriptivo del error</response>
         [HttpPost]
-        [Authorize]  
+        [Authorize]
         [Route("getPatient_ID")]
         [ProducesResponseType(typeof(int?), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
@@ -202,7 +200,7 @@ namespace WebService.Controllers
         /// <response code="200">El identificador interno del paciente creado</response>
         /// <response code="400">Mensaje detallado del error</response>
         [HttpPost]
-        [Authorize]  
+        [Authorize]
         [Route("AddPatients")]
         [ProducesResponseType(typeof(int?), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
@@ -238,7 +236,7 @@ namespace WebService.Controllers
         /// <response code="400">Mensaje detallado del error</response>
         /// <response code="401">No está autenticado</response>
         [HttpPost]
-        [Authorize]  
+        [Authorize]
         [Route("getComuna")]
         [ProducesResponseType(typeof(Communes), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
@@ -289,7 +287,7 @@ namespace WebService.Controllers
         /// <response code="400">Mensaje detallado del error</response>
         /// <response code="401">No está autenticado</response>
         [HttpPost]
-        [Authorize]  
+        [Authorize]
         [Route("AddDemograph")]
         [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
@@ -344,7 +342,7 @@ namespace WebService.Controllers
         /// <response code="400">Mensaje detallado del error</response>
         /// <response code="401">No autenticado</response>
         [HttpPost]
-        [Authorize]  
+        [Authorize]
         [Route("addSospecha")]
         [ProducesResponseType(typeof(int?), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
@@ -424,7 +422,8 @@ namespace WebService.Controllers
                 //comienzo de el armado de json para crear muestra en Minsal
                 var muestras = new List<MuestraMinsal>();
 
-                muestras.Add(new MuestraMinsal{
+                muestras.Add(new MuestraMinsal
+                {
                     codigo_muestra_cliente = suspectCase.id.ToString(),
                     epivigila = suspectCase.epivigila.ToString(),
                     id_laboratorio = laboratorio.id_openagora,
@@ -510,61 +509,96 @@ namespace WebService.Controllers
         /// <response code="400">Mensaje detallado del error</response>
         /// <response code="401">No autenticado</response>
         [HttpPost]
-        [Authorize]  
+        [Authorize]
         [Route("recepcionMuestra")]
         [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> UdpateSospecha([FromBody] Sospecha sospecha)
         {
+            var insercionEME = false;
+            long? idEME = 0;
             try
             {
+
                 var sospechaActualizada = await _db.suspect_cases.FindAsync(sospecha.id);
 
                 if (sospechaActualizada == null) return BadRequest("No se guardo correctamente....");
 
-                sospechaActualizada.reception_at = sospecha.reception_at;
-                sospechaActualizada.receptor_id = sospecha.receptor_id;
-                sospechaActualizada.laboratory_id = sospecha.laboratory_id;
-                sospechaActualizada.updated_at = sospecha.updated_at;
-
-                await _db.SaveChangesAsync();
-
-                //Se obtiene el laboratorio para sacer el ACCESSKEY 
-                var laboratorio = _db.laboratories.FirstOrDefault(a => a.id == sospechaActualizada.laboratory_id);
-
-                if (laboratorio == null) return BadRequest("Laboratorio no encontrado");
-
-                if (!laboratorio.minsal_ws) return Ok("Se Guardo correctamente...");
-
-                //Se prepara el json de la recepcion con la id del Minsal
-                var recepcionesMinsal = new List<RecepcionMinsal>();
-
-                recepcionesMinsal.Add(new RecepcionMinsal
+                if (sospechaActualizada.minsal_ws_id != null)
                 {
-                    id_muestra = sospechaActualizada.minsal_ws_id
-                });
 
-                //conexion hacia el end point de Minsal
-                var httpClient = _clientFactory.CreateClient("conexionApiMinsal");
-                httpClient.DefaultRequestHeaders.Add("ACCESSKEY", laboratorio.token_ws);
-                var response = await httpClient.PostAsJsonAsync("recepcionarMuestra", recepcionesMinsal);
+                    if (sospechaActualizada.reception_at == null)
+                    {
+                        sospechaActualizada.reception_at = sospecha.reception_at;
+                        sospechaActualizada.receptor_id = sospecha.receptor_id;
+                        sospechaActualizada.laboratory_id = sospecha.laboratory_id;
 
-                //Se obtiene el status del response para guardar el retorno en caso de error Minsal
-                if (response.StatusCode != HttpStatusCode.OK &&
-                    response.StatusCode != HttpStatusCode.NoContent)
-                {
-                    //Guardar error MINSAL en BD esmeralda
-                    var error = await response.Content.ReadAsAsync<ErrorMinsal>();
-                    sospechaActualizada.ws_minsal_message = error.error;
+                        await _db.SaveChangesAsync();
+                    }
+
+                    idEME = sospechaActualizada.id;
+                    insercionEME = true;
+
+                    //Se obtiene el laboratorio para sacer el ACCESSKEY 
+                    var laboratorio = _db.laboratories.FirstOrDefault(a => a.id == sospechaActualizada.laboratory_id);
+
+                    if (laboratorio == null) return BadRequest("Laboratorio no encontrado");
+
+                    if (!laboratorio.minsal_ws) return Ok("Se Guardo correctamente...");
+
+                    //Se prepara el json de la recepcion con la id del Minsal
+                    var recepcionesMinsal = new List<RecepcionMinsal>();
+
+                    recepcionesMinsal.Add(new RecepcionMinsal
+                    {
+                        id_muestra = sospechaActualizada.minsal_ws_id
+                    });
+
+                    //conexion hacia el end point de Minsal
+                    var httpClient = _clientFactory.CreateClient("conexionApiMinsal");
+                    httpClient.DefaultRequestHeaders.Add("ACCESSKEY", laboratorio.token_ws);
+                    var response = await httpClient.PostAsJsonAsync("recepcionarMuestra", recepcionesMinsal);
+
+                    //Se obtiene el status del response para guardar el retorno, ya sea la ID de muestra o el error Minsal
+                    switch (response.StatusCode)
+                    {
+                        case HttpStatusCode.OK:
+                        case HttpStatusCode.NoContent:
+                            var respuesta = await response.Content.ReadAsAsync<List<respuestaMuestraMinsal>>();
+                            //La fecha de actualizacion se setea solo cuando se tributa en MINSAL
+                            sospechaActualizada.updated_at = sospechaActualizada.reception_at;
+                            break;
+                        default:
+                            //Guardar error MINSAL en BD esmeralda
+                            var error = await response.Content.ReadAsAsync<ErrorMinsal>();
+                            sospechaActualizada.ws_minsal_message = error.error;
+                            break;
+                    }
                     await _db.SaveChangesAsync();
+
+                    return Ok(sospechaActualizada.id);
+                }
+                else
+                {
+                    return BadRequest(0);
                 }
 
-                return Ok("Se Guardo correctamente...");
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Sospecha no actualizada, sospeche:{@sospecha}", sospecha);
-                return BadRequest("No se guardo correctamente....");
+
+                if (insercionEME)
+                {
+                    var suspectCase = await _db.suspect_cases.FindAsync(idEME);
+                    suspectCase.ws_minsal_message = "Error WS: no se recepcionó en MINSAL";
+                    await _db.SaveChangesAsync();
+                    return BadRequest(idEME);
+                }
+                else
+                {
+                    _logger.LogError(e, "Sospecha no actualizada, sospecha:{@sospecha}", sospecha);
+                    return BadRequest("No se guardo correctamente...." + e);
+                }
             }
         }
 
@@ -590,105 +624,135 @@ namespace WebService.Controllers
         /// <response code="400">Mensaje detallado del error</response>
         /// <response code="401">No autenticado</response>
         [HttpPost]
-        [Authorize]  
+        [Authorize]
         [Route("resultado")]
         [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> UdpateResultado([FromBody] Sospecha sospecha)
         {
+            var insercionEME = false;
+            long? idEME = 0;
             try
             {
                 var sospechaActualizada = _db.suspect_cases.Find(sospecha.id);
 
                 if (sospechaActualizada == null) return NotFound(sospecha);
 
-                sospechaActualizada.pcr_sars_cov_2_at = sospecha.pscr_sars_cov_2_at;
-                sospechaActualizada.pcr_sars_cov_2 = sospecha.pscr_sars_cov_2;
-                sospechaActualizada.validator_id = sospecha.validator_id;
-                sospechaActualizada.updated_at = sospecha.updated_at;
-
-                await _db.SaveChangesAsync();
-
-                var laboratorio = await _db.laboratories.FirstOrDefaultAsync(a => a.id == sospechaActualizada.laboratory_id);
-
-                if (laboratorio == null) return BadRequest("Laboratorio no encontrado");
-
-                if (!laboratorio.minsal_ws) return Ok("Exito... se actualizo los resultado..");
-
-                //El resultado desde esmeralda viene como negative, positive o rejected, en ese caso Minsal lo recibe como Positivo, Negativo o Muestra no apta
-                var resultadoEme = sospechaActualizada.pcr_sars_cov_2 switch
+                if (sospechaActualizada.minsal_ws_id != null && sospechaActualizada.reception_at != null && sospechaActualizada.reception_at == sospechaActualizada.updated_at)
                 {
-                    "negative" => "Negativo",
-                    "positive" => "Positivo",
-                    _ => "Muestra no apta"
-                };
 
-                //Se obtiene el laboratorio para sacer el ACCESSKEY 
+                    if (sospechaActualizada.pcr_sars_cov_2_at == null)
+                    {
+                        sospechaActualizada.pcr_sars_cov_2_at = sospecha.pscr_sars_cov_2_at;
+                        sospechaActualizada.pcr_sars_cov_2 = sospecha.pscr_sars_cov_2;
+                        sospechaActualizada.validator_id = sospecha.validator_id;
+                        
 
-                //Se prepara el json del resultado
-                var resultado = new ResultadoMinsal
-                {
-                    id_muestra = sospechaActualizada.minsal_ws_id,
-                    resultado = resultadoEme
-                };
+                        await _db.SaveChangesAsync();
 
-                //Se hace un get a esmeralda para obtener el token del formulario 
-                var tokenLogin = await GetTokenLogin();
+                    }
+                
+                    idEME = sospechaActualizada.id;
+                    insercionEME = true;
 
-                //conexion para iniciar sesion en esmeralda
-                var apiEme = _clientFactory.CreateClient("conexionEsmeralda");
-                var formContent = new FormUrlEncodedContent(new[]
-                {
+                    var laboratorio = await _db.laboratories.FirstOrDefaultAsync(a => a.id == sospechaActualizada.laboratory_id);
+
+                    if (laboratorio == null) return BadRequest("Laboratorio no encontrado");
+
+                    if (!laboratorio.minsal_ws) return Ok("Exito... se actualizo los resultado..");
+
+
+                    //El resultado desde esmeralda viene como negative, positive o rejected, en ese caso Minsal lo recibe como Positivo, Negativo o Muestra no apta
+                    var resultadoEme = sospechaActualizada.pcr_sars_cov_2 switch
+                    {
+                        "negative" => "Negativo",
+                        "positive" => "Positivo",
+                        _ => "Muestra no apta"
+                    };
+
+                    //Se obtiene el laboratorio para sacer el ACCESSKEY 
+
+                    //Se prepara el json del resultado
+                    var resultado = new ResultadoMinsal
+                    {
+                        id_muestra = sospechaActualizada.minsal_ws_id,
+                        resultado = resultadoEme
+                    };
+
+                    //Se hace un get a esmeralda para obtener el token del formulario 
+                    var tokenLogin = await GetTokenLogin();
+
+                    //conexion para iniciar sesion en esmeralda
+                    var apiEme = _clientFactory.CreateClient("conexionEsmeralda");
+                    var formContent = new FormUrlEncodedContent(new[]
+                    {
                     new KeyValuePair<string, string>("_token", tokenLogin),
                     new KeyValuePair<string, string>("email",  _configuration["ESMERALDA_USER"]),
                     new KeyValuePair<string, string>("password", _configuration["ESMERALDA_PASSWORD"])
                 });
 
-                await apiEme.PostAsync("login", formContent);
+                    await apiEme.PostAsync("login", formContent);
 
-                //Una vez logueados se obtiene el pdf de resultado de la muestra, se convierte a array de bytes para ser enviado
-                var responsePdf = await apiEme.GetAsync("lab/print/" + sospechaActualizada.id);
-                var ms = new MemoryStream();
-                await responsePdf.Content.CopyToAsync(ms);
-                var bytesPdf = ms.ToArray();
+                    //Una vez logueados se obtiene el pdf de resultado de la muestra, se convierte a array de bytes para ser enviado
+                    var responsePdf = await apiEme.GetAsync("lab/print/" + sospechaActualizada.id);
+                    var ms = new MemoryStream();
+                    await responsePdf.Content.CopyToAsync(ms);
+                    var bytesPdf = ms.ToArray();
 
-                //conexion hacia el end point de Minsal
-                var httpClient = _clientFactory.CreateClient("conexionApiMinsal");
-                httpClient.DefaultRequestHeaders.Add("ACCESSKEY", laboratorio.token_ws);
-                //Se arma el multipart/form-data con el json de el resultado y el pdf convertido para ser enviados a Minsal
-                var jsonResultado = JsonConvert.SerializeObject(resultado);
+                    //conexion hacia el end point de Minsal
+                    var httpClient = _clientFactory.CreateClient("conexionApiMinsal");
+                    httpClient.DefaultRequestHeaders.Add("ACCESSKEY", laboratorio.token_ws);
+                    //Se arma el multipart/form-data con el json de el resultado y el pdf convertido para ser enviados a Minsal
+                    var jsonResultado = JsonConvert.SerializeObject(resultado);
 
-                var form = new MultipartFormDataContent();
-                var contentJsonResultado = new StringContent(jsonResultado);
+                    var form = new MultipartFormDataContent();
+                    var contentJsonResultado = new StringContent(jsonResultado);
 
-                form.Add(new ByteArrayContent(bytesPdf, 0, bytesPdf.Length), "upfile", "document.pdf");
-                form.Add(contentJsonResultado, "parametros");
+                    form.Add(new ByteArrayContent(bytesPdf, 0, bytesPdf.Length), "upfile", "document.pdf");
+                    form.Add(contentJsonResultado, "parametros");
 
-                var response = await httpClient.PostAsync("entregaResultado", form);
+                    var response = await httpClient.PostAsync("entregaResultado", form);
 
-                //Se obtiene el status del response para guardar el retorno en caso de error Minsal
-                switch (response.StatusCode)
-                {
-                    case HttpStatusCode.OK:
-                    case HttpStatusCode.NoContent:
-                        await response.Content.ReadAsAsync<RespuestaResultadoMinsal>();
-                        sospechaActualizada.ws_pntm_mass_sending = false;
-                        sospechaActualizada.ws_minsal_message = "Muestra informada";
-                        break;
-                    default:
-                        //Guardar error MINSAL en BD esmeralda
-                        var error = await response.Content.ReadAsAsync<ErrorMinsal>();
-                        sospechaActualizada.ws_minsal_message = error.error;
-                        break;
+                    //Se obtiene el status del response para guardar el retorno en caso de error Minsal
+                    switch (response.StatusCode)
+                    {
+                        case HttpStatusCode.OK:
+                        case HttpStatusCode.NoContent:
+                            await response.Content.ReadAsAsync<RespuestaResultadoMinsal>();
+                            sospechaActualizada.ws_pntm_mass_sending = false;
+                            //La fecha de actualizacion se setea solo cuando se tributa en MINSAL
+                            sospechaActualizada.updated_at = sospecha.updated_at;
+                            sospechaActualizada.ws_minsal_message = "Muestra informada";
+                            break;
+                        default:
+                            //Guardar error MINSAL en BD esmeralda
+                            var error = await response.Content.ReadAsAsync<ErrorMinsal>();
+                            sospechaActualizada.ws_minsal_message = error.error;
+                            break;
+                    }
+                    await _db.SaveChangesAsync();
+
+                    return Ok(sospechaActualizada.id);
                 }
-                await _db.SaveChangesAsync();
-
-                return Ok("Exito... se actualizo los resultado..");
+                else
+                {
+                    return BadRequest(0);
+                }
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Resultado no actualizado, sospecha:{@sospecha}", sospecha);
-                return BadRequest("No se guardo correctamente....");
+                if (insercionEME)
+                {
+                    var suspectCase = await _db.suspect_cases.FindAsync(idEME);
+                    suspectCase.ws_minsal_message = "Error WS: no se informó resultado en MINSAL";
+                    await _db.SaveChangesAsync();
+                    return BadRequest(idEME);
+                }
+                else
+                {
+                    _logger.LogError(e, "Resultado no actualizado, sospecha:{@sospecha}", sospecha);
+                    return BadRequest("No se guardo correctamente...." + e);
+                }
             }
         }
 
@@ -708,7 +772,7 @@ namespace WebService.Controllers
         /// <response code="400">Mensaje detallado del error</response>
         /// <response code="401">No autenticado</response>
         [HttpPost]
-        [Authorize]  
+        [Authorize]
         [Route("getSuspectCase")]
         [ProducesResponseType(typeof(CasoResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
@@ -831,7 +895,7 @@ namespace WebService.Controllers
         /// <response code="400">Mensaje detallado del error</response>
         /// <response code="401">No autenticado</response>
         [HttpPost]
-        [Authorize] 
+        [Authorize]
         [Route("getDemograph")]
         [ProducesResponseType(typeof(demographics), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
