@@ -291,11 +291,35 @@ namespace WebService.Controllers
         [Route("AddDemograph")]
         [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
-        public IActionResult AddDemograph([FromBody] demographics demographics)
+        public async Task<IActionResult> AddDemograph([FromBody] demographics demographics)
         {
             try
             {
-                _db.demographics.Add(demographics);
+                var patientDemographics =
+                    await _db.demographics.FirstOrDefaultAsync(d => d.patient_id == demographics.patient_id);
+
+                if (patientDemographics == null)
+                {
+                    patientDemographics = new demographics();
+                    patientDemographics.patient_id = demographics.patient_id;
+                    patientDemographics.created_at = demographics.created_at;
+                }
+
+                patientDemographics.address = demographics.address;
+                patientDemographics.city = demographics.city;
+                patientDemographics.commune_id = demographics.commune_id;
+                patientDemographics.department = demographics.department;
+                patientDemographics.email = demographics.email;
+                patientDemographics.nationality = demographics.nationality;
+                patientDemographics.number = demographics.number;
+                patientDemographics.region_id = demographics.region_id;
+                patientDemographics.street_type = demographics.street_type;
+                patientDemographics.suburb = demographics.suburb;
+                patientDemographics.telephone = demographics.telephone;
+                patientDemographics.telephone2 = demographics.telephone2;
+                patientDemographics.updated_at = demographics.updated_at;
+
+                _db.demographics.Update(demographics);
                 _db.SaveChanges();
                 return Ok("Se Guardo Correctamente la Demografía");
             }
@@ -348,11 +372,10 @@ namespace WebService.Controllers
         [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> AddSospecha([FromBody] Sospecha sospecha)
         {
-            var insercionEME = false;
-            long? idEME = 0;
+            SuspectCase suspectCase = null;
             try
             {
-                SuspectCase suspectCase = _db.suspect_cases.FirstOrDefault(a => a.patient_id == sospecha.patient_id && a.sample_at == sospecha.sample_at);
+                suspectCase = _db.suspect_cases.FirstOrDefault(a => a.patient_id == sospecha.patient_id && a.sample_at == sospecha.sample_at);
                 if (suspectCase == null)
                 {
                     suspectCase = new SuspectCase
@@ -380,10 +403,6 @@ namespace WebService.Controllers
                     await _db.suspect_cases.AddAsync(suspectCase);
                     await _db.SaveChangesAsync();
                 }
-
-                idEME = suspectCase.id;
-                insercionEME = true;
-                //int variable = Convert.ToInt32(sospecha.gender);
 
                 var laboratorio = await _db.laboratories.FirstOrDefaultAsync(a => a.id == sospecha.laboratory_id);
 
@@ -479,18 +498,16 @@ namespace WebService.Controllers
             }
             catch (Exception e)
             {
-                if (insercionEME)
+                _logger.LogError(e, "Sospecha no agregada, sospecha:{@sospecha}", sospecha);
+                
+                if (suspectCase?.id != null)
                 {
-                    var suspectCase = await _db.suspect_cases.FindAsync(idEME);
-                    suspectCase.ws_minsal_message = "Error WS: no se creó en MINSAL";
+                    suspectCase.ws_minsal_message = "Error WS: no se tributó en MINSAL";
                     await _db.SaveChangesAsync();
-                    return BadRequest(idEME);
+                    return BadRequest(suspectCase.id);
                 }
-                else
-                {
-                    _logger.LogError(e, "Sospecha no agregada, sospecha:{@sospecha}", sospecha);
-                    return BadRequest("No se guardo correctamente...." + e);
-                }
+
+                return BadRequest("No se guardo correctamente...." + e);
             }
         }
 
