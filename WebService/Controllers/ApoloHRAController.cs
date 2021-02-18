@@ -375,7 +375,9 @@ namespace WebService.Controllers
             SuspectCase suspectCase = null;
             try
             {
-                suspectCase = _db.suspect_cases.FirstOrDefault(a => a.patient_id == sospecha.patient_id && a.sample_at == sospecha.sample_at);
+                suspectCase = _db.suspect_cases.FirstOrDefault(
+                    a => a.patient_id == sospecha.patient_id && a.sample_at == sospecha.sample_at
+                );
                 if (suspectCase == null)
                 {
                     suspectCase = new SuspectCase
@@ -447,8 +449,6 @@ namespace WebService.Controllers
                     tipodoc = "PASAPORTE";
                 }
 
-
-
                 //comienzo de el armado de json para crear muestra en Minsal
                 var muestras = new List<MuestraMinsal>();
 
@@ -471,7 +471,7 @@ namespace WebService.Controllers
                     fecha_muestra = ((DateTime)suspectCase.sample_at).ToString("dd-MM-yyyyTHH:mm:ss"),
                     tecnica_muestra = "RT-PCR",
                     tipo_muestra = suspectCase.sample_type,
-                    paciente_run = paciente.run.ToString(),
+                    paciente_run = paciente.run?.ToString(),
                     paciente_dv = paciente.dv,
                     paciente_prevision = "FONASA",
                     paciente_pasaporte = paciente.other_identification,
