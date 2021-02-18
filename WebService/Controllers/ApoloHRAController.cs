@@ -291,17 +291,41 @@ namespace WebService.Controllers
         [Route("AddDemograph")]
         [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
-        public IActionResult AddDemograph([FromBody] demographics demographics)
+        public async Task<IActionResult> AddDemograph([FromBody] demographics demographics)
         {
             try
             {
-                _db.demographics.Add(demographics);
+                var patientDemographics =
+                    await _db.demographics.FirstOrDefaultAsync(d => d.patient_id == demographics.patient_id);
+
+                if (patientDemographics == null)
+                {
+                    patientDemographics = new demographics();
+                    patientDemographics.patient_id = demographics.patient_id;
+                    patientDemographics.created_at = demographics.created_at;
+                }
+
+                patientDemographics.address = demographics.address;
+                patientDemographics.city = demographics.city;
+                patientDemographics.commune_id = demographics.commune_id;
+                patientDemographics.department = demographics.department;
+                patientDemographics.email = demographics.email;
+                patientDemographics.nationality = demographics.nationality;
+                patientDemographics.number = demographics.number;
+                patientDemographics.region_id = demographics.region_id;
+                patientDemographics.street_type = demographics.street_type;
+                patientDemographics.suburb = demographics.suburb;
+                patientDemographics.telephone = demographics.telephone;
+                patientDemographics.telephone2 = demographics.telephone2;
+                patientDemographics.updated_at = demographics.updated_at;
+
+                _db.demographics.Update(patientDemographics);
                 _db.SaveChanges();
                 return Ok("Se Guardo Correctamente la Demografía");
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Demografico no agregado, de@mographics:{@demographics}", demographics);
+                _logger.LogError(e, "Demografico no agregado, demographics:{@demographics}", demographics);
                 return BadRequest("Error.....Intente más Tarde" + e);
             }
         }
@@ -351,7 +375,9 @@ namespace WebService.Controllers
             SuspectCase suspectCase = null;
             try
             {
-                suspectCase = _db.suspect_cases.FirstOrDefault(a => a.patient_id == sospecha.patient_id && a.sample_at == sospecha.sample_at);
+                suspectCase = _db.suspect_cases.FirstOrDefault(
+                    a => a.patient_id == sospecha.patient_id && a.sample_at == sospecha.sample_at
+                );
                 if (suspectCase == null)
                 {
                     suspectCase = new SuspectCase
@@ -392,6 +418,10 @@ namespace WebService.Controllers
                 var demografia = await _db.demographics.FirstOrDefaultAsync(a => a.patient_id == pacienteId);
                 var comuna = await _db.communes.FindAsync(demografia.commune_id);
                 var pais = await _db.countries.FirstOrDefaultAsync(a => a.name == demografia.nationality);
+                if (pais == null)
+                {
+                    pais = await _db.countries.FirstOrDefaultAsync(a => a.name == "Chile");
+                }
                 var responsable = await _db.users.FindAsync(suspectCase.user_id);
                 string tipodoc;
 
@@ -441,7 +471,7 @@ namespace WebService.Controllers
                     fecha_muestra = ((DateTime)suspectCase.sample_at).ToString("dd-MM-yyyyTHH:mm:ss"),
                     tecnica_muestra = "RT-PCR",
                     tipo_muestra = suspectCase.sample_type,
-                    paciente_run = paciente.run.ToString(),
+                    paciente_run = paciente.run?.ToString(),
                     paciente_dv = paciente.dv,
                     paciente_prevision = "FONASA",
                     paciente_pasaporte = paciente.other_identification,
@@ -475,7 +505,7 @@ namespace WebService.Controllers
             catch (Exception e)
             {
                 _logger.LogError(e, "Sospecha no agregada, sospecha:{@sospecha}", sospecha);
-                
+
                 if (suspectCase?.id != null)
                 {
                     suspectCase.ws_minsal_message = "Error WS: no se tributó en MINSAL";
@@ -646,12 +676,12 @@ namespace WebService.Controllers
                         sospechaActualizada.pcr_sars_cov_2_at = sospecha.pscr_sars_cov_2_at;
                         sospechaActualizada.pcr_sars_cov_2 = sospecha.pscr_sars_cov_2;
                         sospechaActualizada.validator_id = sospecha.validator_id;
-                        
+
 
                         await _db.SaveChangesAsync();
 
                     }
-                
+
                     idEME = sospechaActualizada.id;
                     insercionEME = true;
 
@@ -689,7 +719,7 @@ namespace WebService.Controllers
                     new KeyValuePair<string, string>("_token", tokenLogin),
                     new KeyValuePair<string, string>("email",  _configuration["ESMERALDA_USER"]),
                     new KeyValuePair<string, string>("password", _configuration["ESMERALDA_PASSWORD"])
-                });
+                    });
 
                     await apiEme.PostAsync("login", formContent);
 
