@@ -319,13 +319,13 @@ namespace WebService.Controllers
                 patientDemographics.telephone2 = demographics.telephone2;
                 patientDemographics.updated_at = demographics.updated_at;
 
-                _db.demographics.Update(demographics);
+                _db.demographics.Update(patientDemographics);
                 _db.SaveChanges();
                 return Ok("Se Guardo Correctamente la Demografía");
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Demografico no agregado, de@mographics:{@demographics}", demographics);
+                _logger.LogError(e, "Demografico no agregado, demographics:{@demographics}", demographics);
                 return BadRequest("Error.....Intente más Tarde" + e);
             }
         }
@@ -499,7 +499,7 @@ namespace WebService.Controllers
             catch (Exception e)
             {
                 _logger.LogError(e, "Sospecha no agregada, sospecha:{@sospecha}", sospecha);
-                
+
                 if (suspectCase?.id != null)
                 {
                     suspectCase.ws_minsal_message = "Error WS: no se tributó en MINSAL";
@@ -670,12 +670,12 @@ namespace WebService.Controllers
                         sospechaActualizada.pcr_sars_cov_2_at = sospecha.pscr_sars_cov_2_at;
                         sospechaActualizada.pcr_sars_cov_2 = sospecha.pscr_sars_cov_2;
                         sospechaActualizada.validator_id = sospecha.validator_id;
-                        
+
 
                         await _db.SaveChangesAsync();
 
                     }
-                
+
                     idEME = sospechaActualizada.id;
                     insercionEME = true;
 
@@ -713,7 +713,7 @@ namespace WebService.Controllers
                     new KeyValuePair<string, string>("_token", tokenLogin),
                     new KeyValuePair<string, string>("email",  _configuration["ESMERALDA_USER"]),
                     new KeyValuePair<string, string>("password", _configuration["ESMERALDA_PASSWORD"])
-                });
+                    });
 
                     await apiEme.PostAsync("login", formContent);
 
