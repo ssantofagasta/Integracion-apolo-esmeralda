@@ -120,7 +120,10 @@ namespace WebService.Controllers
         {
             try
             {
-                List<users> usuarios = _db.users.Where(x => x.laboratory_id == laboratoryId).OrderBy(x => x.name).ToList();
+                List<users> usuarios = _db.users.Where(x => x.laboratory_id == laboratoryId)
+                                          .OrderBy(x => x.name)
+                                          .ToList();
+
                 return usuarios;
             }
             catch (Exception e)
@@ -163,7 +166,7 @@ namespace WebService.Controllers
                 else
                     p = _db.patients.FirstOrDefault(a => a.run.Equals(int.Parse(pa.run)));
 
-                return p != null ? Ok(p.id) : Ok(null);
+                return p != null? Ok(p.id): Ok(null);
             }
             catch (Exception e)
             {
@@ -246,6 +249,7 @@ namespace WebService.Controllers
             {
                 var c = _db.communes
                            .FirstOrDefault(x => x.code_deis.Equals(codeIds));
+
                 return Ok(c);
             }
             catch (Exception e)
@@ -378,30 +382,32 @@ namespace WebService.Controllers
                 suspectCase = _db.suspect_cases.FirstOrDefault(
                     a => a.patient_id == sospecha.patient_id && a.sample_at == sospecha.sample_at
                 );
+
                 if (suspectCase == null)
                 {
                     suspectCase = new SuspectCase
                     {
                         age = sospecha.age,
-                        gender = sospecha.gender,// sexo del paciente
+                        gender = sospecha.gender, // sexo del paciente
                         sample_at = sospecha.sample_at, //fecha muestra
                         epidemiological_week = sospecha.epidemiological_week,
-                        run_medic = sospecha.run_medic,//rut medico solicitante
+                        run_medic = sospecha.run_medic, //rut medico solicitante
                         symptoms = sospecha.symptoms == "Si",
                         pcr_sars_cov_2 = sospecha.pscr_sars_cov_2,
-                        sample_type = sospecha.sample_type,// tipo de muestra
+                        sample_type = sospecha.sample_type, // tipo de muestra
                         epivigila = sospecha.epivigila,
                         gestation = sospecha.gestation,
                         gestation_week = sospecha.gestation_week,
                         close_contact = sospecha.close_contact,
                         functionary = sospecha.functionary,
-                        patient_id = sospecha.patient_id,//rut del paciente
+                        patient_id = sospecha.patient_id, //rut del paciente
                         establishment_id = sospecha.establishment_id,
                         user_id = sospecha.user_id,
                         created_at = sospecha.created_at,
                         updated_at = sospecha.updated_at,
                         laboratory_id = sospecha.laboratory_id
                     };
+
                     await _db.suspect_cases.AddAsync(suspectCase);
                     await _db.SaveChangesAsync();
                 }
@@ -418,10 +424,8 @@ namespace WebService.Controllers
                 var demografia = await _db.demographics.FirstOrDefaultAsync(a => a.patient_id == pacienteId);
                 var comuna = await _db.communes.FindAsync(demografia.commune_id);
                 var pais = await _db.countries.FirstOrDefaultAsync(a => a.name == demografia.nationality);
-                if (pais == null)
-                {
-                    pais = await _db.countries.FirstOrDefaultAsync(a => a.name == "Chile");
-                }
+                if (pais == null) { pais = await _db.countries.FirstOrDefaultAsync(a => a.name == "Chile"); }
+
                 var responsable = await _db.users.FindAsync(suspectCase.user_id);
                 string tipodoc;
 
@@ -438,46 +442,45 @@ namespace WebService.Controllers
                             suma += (pacienteRun[x]) * (((pacienteRunLength - x) % 6) + 2);
 
                         int numericDigito = (11 - suma % 11);
-                        string digito = numericDigito == 11 ? "0" : numericDigito == 10 ? "K" : numericDigito.ToString();
+                        string digito = numericDigito == 11? "0": numericDigito == 10? "K": numericDigito.ToString();
                         paciente.dv = digito;
                     }
 
                     tipodoc = "RUN";
                 }
-                else
-                {
-                    tipodoc = "PASAPORTE";
-                }
+                else { tipodoc = "PASAPORTE"; }
 
                 //comienzo de el armado de json para crear muestra en Minsal
                 var muestras = new List<MuestraMinsal>();
 
-                muestras.Add(new MuestraMinsal
-                {
-                    codigo_muestra_cliente = suspectCase.id.ToString(),
-                    epivigila = suspectCase.epivigila.ToString(),
-                    id_laboratorio = laboratorio.id_openagora,
-                    rut_responsable = responsable.run + "-" + responsable.dv,
-                    paciente_tipodoc = tipodoc,
-                    paciente_nombres = paciente.name,
-                    paciente_ap_pat = paciente.fathers_family,
-                    paciente_ap_mat = paciente.mothers_family,
-                    paciente_fecha_nac = ((DateTime)paciente.birthday).ToString("dd-MM-yyyy"),
-                    paciente_comuna = comuna.code_deis,
-                    paciente_direccion = (demografia.address + " - " + demografia.number),
-                    paciente_telefono = demografia.telephone,
-                    paciente_sexo = paciente.gender == "male" ? "M" : "F",
-                    cod_deis = _db.establishments.Find(suspectCase.establishment_id).new_code_deis,
-                    fecha_muestra = ((DateTime)suspectCase.sample_at).ToString("dd-MM-yyyyTHH:mm:ss"),
-                    tecnica_muestra = "RT-PCR",
-                    tipo_muestra = suspectCase.sample_type,
-                    paciente_run = paciente.run?.ToString(),
-                    paciente_dv = paciente.dv,
-                    paciente_prevision = "FONASA",
-                    paciente_pasaporte = paciente.other_identification,
-                    paciente_ext_paisorigen = pais.id_minsal
-
-                });
+                muestras.Add(
+                    new MuestraMinsal
+                    {
+                        codigo_muestra_cliente = suspectCase.id.ToString(),
+                        epivigila = suspectCase.epivigila.ToString(),
+                        id_laboratorio = laboratorio.id_openagora,
+                        rut_responsable = responsable.run + "-" + responsable.dv,
+                        paciente_tipodoc = tipodoc,
+                        paciente_nombres = paciente.name,
+                        paciente_ap_pat = paciente.fathers_family,
+                        paciente_ap_mat = paciente.mothers_family,
+                        paciente_fecha_nac = ((DateTime)paciente.birthday).ToString("dd-MM-yyyy"),
+                        paciente_comuna = comuna.code_deis,
+                        paciente_direccion = (demografia.address + " - " + demografia.number),
+                        paciente_telefono = demografia.telephone,
+                        paciente_sexo = paciente.gender == "male"? "M": "F",
+                        cod_deis = _db.establishments.Find(suspectCase.establishment_id)
+                                      .new_code_deis,
+                        fecha_muestra = ((DateTime)suspectCase.sample_at).ToString("dd-MM-yyyyTHH:mm:ss"),
+                        tecnica_muestra = "RT-PCR",
+                        tipo_muestra = suspectCase.sample_type,
+                        paciente_run = paciente.run?.ToString(),
+                        paciente_dv = paciente.dv,
+                        paciente_prevision = "FONASA",
+                        paciente_pasaporte = paciente.other_identification,
+                        paciente_ext_paisorigen = pais.id_minsal
+                    }
+                );
 
                 //conexion hacia el end point de Minsal
                 var httpClient = _clientFactory.CreateClient("conexionApiMinsal");
@@ -490,7 +493,9 @@ namespace WebService.Controllers
                     case HttpStatusCode.OK:
                     case HttpStatusCode.NoContent:
                         var respuesta = await response.Content.ReadAsAsync<List<respuestaMuestraMinsal>>();
-                        suspectCase.minsal_ws_id = respuesta.First().id_muestra;
+                        suspectCase.minsal_ws_id = respuesta.First()
+                                                            .id_muestra;
+
                         break;
                     default:
                         //Guardar error MINSAL en BD esmeralda
@@ -498,6 +503,7 @@ namespace WebService.Controllers
                         suspectCase.ws_minsal_message = error.error;
                         break;
                 }
+
                 await _db.SaveChangesAsync();
 
                 return Ok(suspectCase.id);
@@ -545,92 +551,78 @@ namespace WebService.Controllers
         [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> UdpateSospecha([FromBody] Sospecha sospecha)
         {
-            var insercionEME = false;
-            long? idEME = 0;
+            SuspectCase sospechaActualizada = null;
             try
             {
-
-                var sospechaActualizada = await _db.suspect_cases.FindAsync(sospecha.id);
+                sospechaActualizada = await _db.suspect_cases.FindAsync(sospecha.id);
 
                 if (sospechaActualizada == null) return BadRequest("No se guardo correctamente....");
 
-                if (sospechaActualizada.minsal_ws_id != null)
+                if (sospechaActualizada.minsal_ws_id == null) { return BadRequest(0); }
+
+                if (sospechaActualizada.reception_at == null)
                 {
+                    sospechaActualizada.reception_at = sospecha.reception_at;
+                    sospechaActualizada.receptor_id = sospecha.receptor_id;
+                    sospechaActualizada.laboratory_id = sospecha.laboratory_id;
 
-                    if (sospechaActualizada.reception_at == null)
-                    {
-                        sospechaActualizada.reception_at = sospecha.reception_at;
-                        sospechaActualizada.receptor_id = sospecha.receptor_id;
-                        sospechaActualizada.laboratory_id = sospecha.laboratory_id;
-
-                        await _db.SaveChangesAsync();
-                    }
-
-                    idEME = sospechaActualizada.id;
-                    insercionEME = true;
-
-                    //Se obtiene el laboratorio para sacer el ACCESSKEY 
-                    var laboratorio = _db.laboratories.FirstOrDefault(a => a.id == sospechaActualizada.laboratory_id);
-
-                    if (laboratorio == null) return BadRequest("Laboratorio no encontrado");
-
-                    if (!laboratorio.minsal_ws) return Ok("Se Guardo correctamente...");
-
-                    //Se prepara el json de la recepcion con la id del Minsal
-                    var recepcionesMinsal = new List<RecepcionMinsal>();
-
-                    recepcionesMinsal.Add(new RecepcionMinsal
-                    {
-                        id_muestra = sospechaActualizada.minsal_ws_id
-                    });
-
-                    //conexion hacia el end point de Minsal
-                    var httpClient = _clientFactory.CreateClient("conexionApiMinsal");
-                    httpClient.DefaultRequestHeaders.Add("ACCESSKEY", laboratorio.token_ws);
-                    var response = await httpClient.PostAsJsonAsync("recepcionarMuestra", recepcionesMinsal);
-
-                    //Se obtiene el status del response para guardar el retorno, ya sea la ID de muestra o el error Minsal
-                    switch (response.StatusCode)
-                    {
-                        case HttpStatusCode.OK:
-                        case HttpStatusCode.NoContent:
-                            var respuesta = await response.Content.ReadAsAsync<List<respuestaMuestraMinsal>>();
-                            //La fecha de actualizacion se setea solo cuando se tributa en MINSAL
-                            sospechaActualizada.updated_at = sospechaActualizada.reception_at;
-                            break;
-                        default:
-                            //Guardar error MINSAL en BD esmeralda
-                            var error = await response.Content.ReadAsAsync<ErrorMinsal>();
-                            sospechaActualizada.ws_minsal_message = error.error;
-                            break;
-                    }
                     await _db.SaveChangesAsync();
-
-                    return Ok(sospechaActualizada.id);
                 }
-                else
+
+
+                //Se obtiene el laboratorio para sacer el ACCESSKEY 
+                var laboratorio = _db.laboratories.FirstOrDefault(a => a.id == sospechaActualizada.laboratory_id);
+
+                if (laboratorio == null) return BadRequest("Laboratorio no encontrado");
+
+                if (!laboratorio.minsal_ws) return Ok("Se Guardo correctamente...");
+
+                //Se prepara el json de la recepcion con la id del Minsal
+                var recepcionesMinsal = new List<RecepcionMinsal>();
+
+                recepcionesMinsal.Add(new RecepcionMinsal {id_muestra = sospechaActualizada.minsal_ws_id});
+
+                //conexion hacia el end point de Minsal
+                var httpClient = _clientFactory.CreateClient("conexionApiMinsal");
+                httpClient.DefaultRequestHeaders.Add("ACCESSKEY", laboratorio.token_ws);
+                var response = await httpClient.PostAsJsonAsync("recepcionarMuestra", recepcionesMinsal);
+
+                //Se obtiene el status del response para guardar el retorno, ya sea la ID de muestra o el error Minsal
+                switch (response.StatusCode)
                 {
-                    return BadRequest(0);
+                    case HttpStatusCode.OK:
+                    case HttpStatusCode.NoContent:
+                        var respuesta = await response.Content.ReadAsAsync<List<respuestaMuestraMinsal>>();
+                        //La fecha de actualizacion se setea solo cuando se tributa en MINSAL
+                        sospechaActualizada.updated_at = sospechaActualizada.reception_at;
+                        break;
+                    default:
+                        //Guardar error MINSAL en BD esmeralda
+                        var error = await response.Content.ReadAsAsync<ErrorMinsal>();
+                        sospechaActualizada.ws_minsal_message = error.error;
+                        break;
                 }
 
+                await _db.SaveChangesAsync();
+
+                return Ok(sospechaActualizada.id);
+            }
+            catch (DbUpdateException ex)
+            {
+                _logger.LogError(ex, "Problema en actualizar sospecha: {@sospecha}", sospechaActualizada);
+                return BadRequest("No se guardo correctamente..." + ex);
             }
             catch (Exception e)
             {
+                _logger.LogError(e, "Sospecha no actualizada, sospecha:{@sospecha}", sospechaActualizada);
+                if (sospechaActualizada != null)
+                    sospechaActualizada.ws_minsal_message = "Error WS: no se recepcionó en MINSAL";
 
-                if (insercionEME)
-                {
-                    var suspectCase = await _db.suspect_cases.FindAsync(idEME);
-                    suspectCase.ws_minsal_message = "Error WS: no se recepcionó en MINSAL";
-                    await _db.SaveChangesAsync();
-                    return BadRequest(idEME);
-                }
-                else
-                {
-                    _logger.LogError(e, "Sospecha no actualizada, sospecha:{@sospecha}", sospecha);
-                    return BadRequest("No se guardo correctamente...." + e);
-                }
+                await _db.SaveChangesAsync();
+                return BadRequest("No se guardo correctamente...." + e);
             }
         }
+    
 
         /// <summary>
         /// Informa la entrega del resultado de la muestra al caso de asospecha
@@ -660,129 +652,119 @@ namespace WebService.Controllers
         [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> UdpateResultado([FromBody] Sospecha sospecha)
         {
-            var insercionEME = false;
-            long? idEME = 0;
+            SuspectCase sospechaActualizada = null;
             try
             {
-                var sospechaActualizada = _db.suspect_cases.Find(sospecha.id);
+                sospechaActualizada = _db.suspect_cases.Find(sospecha.id);
 
                 if (sospechaActualizada == null) return NotFound(sospecha);
 
-                if (sospechaActualizada.minsal_ws_id != null && sospechaActualizada.reception_at != null && sospechaActualizada.reception_at == sospechaActualizada.updated_at)
+                if (sospechaActualizada.minsal_ws_id == null ||
+                    sospechaActualizada.reception_at == null ||
+                    sospechaActualizada.reception_at != sospechaActualizada.updated_at) { return BadRequest(0); }
+
+                if (sospechaActualizada.pcr_sars_cov_2_at == null)
                 {
-
-                    if (sospechaActualizada.pcr_sars_cov_2_at == null)
-                    {
-                        sospechaActualizada.pcr_sars_cov_2_at = sospecha.pscr_sars_cov_2_at;
-                        sospechaActualizada.pcr_sars_cov_2 = sospecha.pscr_sars_cov_2;
-                        sospechaActualizada.validator_id = sospecha.validator_id;
-
-
-                        await _db.SaveChangesAsync();
-
-                    }
-
-                    idEME = sospechaActualizada.id;
-                    insercionEME = true;
-
-                    var laboratorio = await _db.laboratories.FirstOrDefaultAsync(a => a.id == sospechaActualizada.laboratory_id);
-
-                    if (laboratorio == null) return BadRequest("Laboratorio no encontrado");
-
-                    if (!laboratorio.minsal_ws) return Ok("Exito... se actualizo los resultado..");
-
-
-                    //El resultado desde esmeralda viene como negative, positive o rejected, en ese caso Minsal lo recibe como Positivo, Negativo o Muestra no apta
-                    var resultadoEme = sospechaActualizada.pcr_sars_cov_2 switch
-                    {
-                        "negative" => "Negativo",
-                        "positive" => "Positivo",
-                        _ => "Muestra no apta"
-                    };
-
-                    //Se obtiene el laboratorio para sacer el ACCESSKEY 
-
-                    //Se prepara el json del resultado
-                    var resultado = new ResultadoMinsal
-                    {
-                        id_muestra = sospechaActualizada.minsal_ws_id,
-                        resultado = resultadoEme
-                    };
-
-                    //Se hace un get a esmeralda para obtener el token del formulario 
-                    var tokenLogin = await GetTokenLogin();
-
-                    //conexion para iniciar sesion en esmeralda
-                    var apiEme = _clientFactory.CreateClient("conexionEsmeralda");
-                    var formContent = new FormUrlEncodedContent(new[]
-                    {
-                    new KeyValuePair<string, string>("_token", tokenLogin),
-                    new KeyValuePair<string, string>("email",  _configuration["ESMERALDA_USER"]),
-                    new KeyValuePair<string, string>("password", _configuration["ESMERALDA_PASSWORD"])
-                    });
-
-                    await apiEme.PostAsync("login", formContent);
-
-                    //Una vez logueados se obtiene el pdf de resultado de la muestra, se convierte a array de bytes para ser enviado
-                    var responsePdf = await apiEme.GetAsync("lab/print/" + sospechaActualizada.id);
-                    var ms = new MemoryStream();
-                    await responsePdf.Content.CopyToAsync(ms);
-                    var bytesPdf = ms.ToArray();
-
-                    //conexion hacia el end point de Minsal
-                    var httpClient = _clientFactory.CreateClient("conexionApiMinsal");
-                    httpClient.DefaultRequestHeaders.Add("ACCESSKEY", laboratorio.token_ws);
-                    //Se arma el multipart/form-data con el json de el resultado y el pdf convertido para ser enviados a Minsal
-                    var jsonResultado = JsonConvert.SerializeObject(resultado);
-
-                    var form = new MultipartFormDataContent();
-                    var contentJsonResultado = new StringContent(jsonResultado);
-
-                    form.Add(new ByteArrayContent(bytesPdf, 0, bytesPdf.Length), "upfile", "document.pdf");
-                    form.Add(contentJsonResultado, "parametros");
-
-                    var response = await httpClient.PostAsync("entregaResultado", form);
-
-                    //Se obtiene el status del response para guardar el retorno en caso de error Minsal
-                    switch (response.StatusCode)
-                    {
-                        case HttpStatusCode.OK:
-                        case HttpStatusCode.NoContent:
-                            await response.Content.ReadAsAsync<RespuestaResultadoMinsal>();
-                            sospechaActualizada.ws_pntm_mass_sending = false;
-                            //La fecha de actualizacion se setea solo cuando se tributa en MINSAL
-                            sospechaActualizada.updated_at = sospecha.updated_at;
-                            sospechaActualizada.ws_minsal_message = "Muestra informada";
-                            break;
-                        default:
-                            //Guardar error MINSAL en BD esmeralda
-                            var error = await response.Content.ReadAsAsync<ErrorMinsal>();
-                            sospechaActualizada.ws_minsal_message = error.error;
-                            break;
-                    }
+                    sospechaActualizada.pcr_sars_cov_2_at = sospecha.pscr_sars_cov_2_at;
+                    sospechaActualizada.pcr_sars_cov_2 = sospecha.pscr_sars_cov_2;
+                    sospechaActualizada.validator_id = sospecha.validator_id;
                     await _db.SaveChangesAsync();
+                }
 
-                    return Ok(sospechaActualizada.id);
-                }
-                else
+                var laboratorio =
+                    await _db.laboratories.FirstOrDefaultAsync(a => a.id == sospechaActualizada.laboratory_id);
+
+                if (laboratorio == null) return BadRequest("Laboratorio no encontrado");
+
+                if (!laboratorio.minsal_ws) return Ok("Exito... se actualizo los resultado..");
+
+                //El resultado desde esmeralda viene como negative, positive o rejected, en ese caso Minsal lo recibe como Positivo, Negativo o Muestra no apta
+                var resultadoEme = sospechaActualizada.pcr_sars_cov_2 switch
                 {
-                    return BadRequest(0);
+                    "negative" => "Negativo",
+                    "positive" => "Positivo",
+                    _ => "Muestra no apta"
+                };
+
+                //Se obtiene el laboratorio para sacer el ACCESSKEY 
+
+                //Se prepara el json del resultado
+                var resultado = new ResultadoMinsal
+                {
+                    id_muestra = sospechaActualizada.minsal_ws_id, resultado = resultadoEme
+                };
+
+                //Se hace un get a esmeralda para obtener el token del formulario 
+                var tokenLogin = await GetTokenLogin();
+
+                //conexion para iniciar sesion en esmeralda
+                var apiEme = _clientFactory.CreateClient("conexionEsmeralda");
+                var formContent = new FormUrlEncodedContent(
+                    new[]
+                    {
+                        new KeyValuePair<string, string>("_token", tokenLogin),
+                        new KeyValuePair<string, string>("email", _configuration["ESMERALDA_USER"]),
+                        new KeyValuePair<string, string>("password", _configuration["ESMERALDA_PASSWORD"])
+                    }
+                );
+
+                await apiEme.PostAsync("login", formContent);
+
+                //Una vez logueados se obtiene el pdf de resultado de la muestra, se convierte a array de bytes para ser enviado
+                var responsePdf = await apiEme.GetAsync("lab/print/" + sospechaActualizada.id);
+                var ms = new MemoryStream();
+                await responsePdf.Content.CopyToAsync(ms);
+                var bytesPdf = ms.ToArray();
+
+                //conexion hacia el end point de Minsal
+                var httpClient = _clientFactory.CreateClient("conexionApiMinsal");
+                httpClient.DefaultRequestHeaders.Add("ACCESSKEY", laboratorio.token_ws);
+                //Se arma el multipart/form-data con el json de el resultado y el pdf convertido para ser enviados a Minsal
+                var jsonResultado = JsonConvert.SerializeObject(resultado);
+
+                var form = new MultipartFormDataContent();
+                var contentJsonResultado = new StringContent(jsonResultado);
+
+                form.Add(new ByteArrayContent(bytesPdf, 0, bytesPdf.Length), "upfile", "document.pdf");
+                form.Add(contentJsonResultado, "parametros");
+
+                var response = await httpClient.PostAsync("entregaResultado", form);
+
+                //Se obtiene el status del response para guardar el retorno en caso de error Minsal
+                switch (response.StatusCode)
+                {
+                    case HttpStatusCode.OK:
+                    case HttpStatusCode.NoContent:
+                        await response.Content.ReadAsAsync<RespuestaResultadoMinsal>();
+                        sospechaActualizada.ws_pntm_mass_sending = false;
+                        //La fecha de actualizacion se setea solo cuando se tributa en MINSAL
+                        sospechaActualizada.updated_at = sospecha.updated_at;
+                        sospechaActualizada.ws_minsal_message = "Muestra informada";
+                        break;
+                    default:
+                        //Guardar error MINSAL en BD esmeralda
+                        var error = await response.Content.ReadAsAsync<ErrorMinsal>();
+                        sospechaActualizada.ws_minsal_message = error.error;
+                        break;
                 }
+
+                await _db.SaveChangesAsync();
+
+                return Ok(sospechaActualizada.id);
             }
-            catch (Exception e)
+            catch (DbUpdateException ex)
             {
-                if (insercionEME)
-                {
-                    var suspectCase = await _db.suspect_cases.FindAsync(idEME);
-                    suspectCase.ws_minsal_message = "Error WS: no se informó resultado en MINSAL";
-                    await _db.SaveChangesAsync();
-                    return BadRequest(idEME);
-                }
-                else
-                {
-                    _logger.LogError(e, "Resultado no actualizado, sospecha:{@sospecha}", sospecha);
-                    return BadRequest("No se guardo correctamente...." + e);
-                }
+                _logger.LogError(ex, "Resultado no actualizado, sospecha: {@sospecha}", sospechaActualizada);
+                return BadRequest("No se guardo correctamente..." + ex);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Resultado no actualizado, sospecha: {@sospecha}", sospechaActualizada);
+                if (sospechaActualizada != null)
+                    sospechaActualizada.ws_minsal_message = "Error WS: no se informó resultado en MINSAL";
+
+                await _db.SaveChangesAsync();
+                return BadRequest("No se guardo correctamente..." + ex);
             }
         }
 
