@@ -922,21 +922,23 @@ namespace WebService.Controllers
             catch (Exception e)
             {
                 _logger.LogError(e, "No se pudo recuperar demografico del paciente:{buscador}", buscador);
-                return BadRequest("No se Encontro sospecha.... problema" + e);
+                return BadRequest("No se Encontro sospecha.... problema " + e);
             }
         }
 
         private Patients RecuperarPaciente(string buscador)
         {
-            var run = int.Parse(buscador);
-            var paciente = _db.patients.FirstOrDefault(c => c.run.Equals(run));
-            if (paciente == null)
+            Patients paciente = null;
+            try
+            {
+                var run = int.Parse(buscador);
+                paciente = _db.patients.FirstOrDefault(c => c.run.Equals(run));
+            }
+            catch (Exception e)
             {
                 paciente = _db.patients.FirstOrDefault(c => c.other_identification.Equals(buscador));
             }
-
             return paciente;
         }
-
     }
 }
