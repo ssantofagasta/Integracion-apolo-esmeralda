@@ -416,6 +416,10 @@ namespace WebService.Controllers
                 var demografia = await _db.demographics.FirstOrDefaultAsync(a => a.patient_id == pacienteId);
                 var comuna = await _db.communes.FindAsync(demografia.commune_id);
                 var pais = await _db.countries.FirstOrDefaultAsync(a => a.name == demografia.nationality);
+                if (pais == null)
+                {
+                    pais = await _db.countries.FirstOrDefaultAsync(a => a.name == "Chile");
+                }
                 var responsable = await _db.users.FindAsync(suspectCase.user_id);
                 string tipodoc;
 
@@ -442,6 +446,8 @@ namespace WebService.Controllers
                 {
                     tipodoc = "PASAPORTE";
                 }
+
+
 
                 //comienzo de el armado de json para crear muestra en Minsal
                 var muestras = new List<MuestraMinsal>();
