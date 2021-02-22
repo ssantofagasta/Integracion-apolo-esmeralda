@@ -487,26 +487,28 @@ namespace WebService.Controllers
                 httpClient.DefaultRequestHeaders.Add("ACCESSKEY", laboratorio.token_ws);
                 var response = await httpClient.PostAsJsonAsync("crearMuestras_v2", muestras);
 
+
                 //Se obtiene el status del response para guardar el retorno, ya sea la ID de muestra o el error Minsal
                 switch (response.StatusCode)
                 {
                     case HttpStatusCode.OK:
                     case HttpStatusCode.NoContent:
+                        //Caso cuando esta todo ok esmeralda y MINSAL
                         var respuesta = await response.Content.ReadAsAsync<List<respuestaMuestraMinsal>>();
                         suspectCase.minsal_ws_id = respuesta.First()
                                                             .id_muestra;
-
-                        break;
+                        await _db.SaveChangesAsync();
+                        return Ok(suspectCase.id);
+                        
                     default:
                         //Guardar error MINSAL en BD esmeralda
+                        //Caso cuando esta ok esmeralda pero MINSAL lanza un error
                         var error = await response.Content.ReadAsAsync<ErrorMinsal>();
                         suspectCase.ws_minsal_message = error.error;
-                        break;
+                        
+                        await _db.SaveChangesAsync();
+                        return Ok(suspectCase.id+"@"+((error.error).Replace("\n","")).Trim());
                 }
-
-                await _db.SaveChangesAsync();
-
-                return Ok(suspectCase.id);
             }
             catch (Exception e)
             {
@@ -514,11 +516,12 @@ namespace WebService.Controllers
 
                 if (suspectCase?.id != null)
                 {
+                    //Caso cuando esta ok esmeralda pero ocurre un error en el WS antes de tributar en el MINSAL
                     suspectCase.ws_minsal_message = "Error WS: no se tributó en MINSAL";
                     await _db.SaveChangesAsync();
                     return BadRequest(suspectCase.id);
                 }
-
+                //Caso cuando fue un error antes de tributar en esmeralda por ende no tributa en MINSAL
                 return BadRequest("No se guardo correctamente...." + e);
             }
         }
@@ -595,17 +598,17 @@ namespace WebService.Controllers
                         var respuesta = await response.Content.ReadAsAsync<List<respuestaMuestraMinsal>>();
                         //La fecha de actualizacion se setea solo cuando se tributa en MINSAL
                         sospechaActualizada.updated_at = sospechaActualizada.reception_at;
-                        break;
+                        await _db.SaveChangesAsync();
+
+                        return Ok(sospechaActualizada.id);
                     default:
                         //Guardar error MINSAL en BD esmeralda
                         var error = await response.Content.ReadAsAsync<ErrorMinsal>();
                         sospechaActualizada.ws_minsal_message = error.error;
-                        break;
-                }
+                        await _db.SaveChangesAsync();
 
-                await _db.SaveChangesAsync();
-
-                return Ok(sospechaActualizada.id);
+                        return Ok(sospechaActualizada.id + "@" + ((error.error).Replace("\n", "")).Trim());
+                }      
             }
             catch (DbUpdateException ex)
             {
@@ -740,17 +743,17 @@ namespace WebService.Controllers
                         //La fecha de actualizacion se setea solo cuando se tributa en MINSAL
                         sospechaActualizada.updated_at = sospecha.updated_at;
                         sospechaActualizada.ws_minsal_message = "Muestra informada";
-                        break;
+                        await _db.SaveChangesAsync();
+
+                        return Ok(sospechaActualizada.id);
                     default:
                         //Guardar error MINSAL en BD esmeralda
                         var error = await response.Content.ReadAsAsync<ErrorMinsal>();
                         sospechaActualizada.ws_minsal_message = error.error;
-                        break;
+                        await _db.SaveChangesAsync();
+
+                        return Ok(sospechaActualizada.id + "@" + ((error.error).Replace("\n", "")).Trim());
                 }
-
-                await _db.SaveChangesAsync();
-
-                return Ok(sospechaActualizada.id);
             }
             catch (DbUpdateException ex)
             {
