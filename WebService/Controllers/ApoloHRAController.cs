@@ -211,10 +211,45 @@ namespace WebService.Controllers
         {
             try
             {
-                _db.patients.Add(patients);
-                _db.SaveChanges();
+                var buscador = "";
+                Patients paciente = null;
+                if(patients.run == null){
+                    buscador = patients.other_identification;
+                }
+                else{
+                    buscador = patients.run.ToString();
+                }
+                 paciente = RecuperarPaciente(buscador);
 
-                return Ok(patients.id);
+                if (paciente == null)
+                {
+                    paciente = new Patients();
+
+                    if (patients.run != null)
+                    {
+                        paciente.run = patients.run;
+                        paciente.dv = patients.dv;
+                    }
+                    else
+                    {
+                        paciente.other_identification = patients.other_identification;
+                    }
+
+                    paciente.name = patients.name;
+                    paciente.fathers_family = patients.fathers_family;
+                    paciente.mothers_family = patients.mothers_family;
+                    paciente.created_at = patients.created_at;
+               
+                    
+                }
+                paciente.updated_at = patients.updated_at;
+                paciente.birthday = patients.birthday;
+                paciente.gender = patients.gender;
+
+                _db.patients.Update(paciente);
+                _db.SaveChanges();
+                return Ok(paciente.id);
+
             }
             catch (Exception e)
             {
