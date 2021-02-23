@@ -211,8 +211,7 @@ namespace WebService.Controllers
         {
             try
             {
-                Patients paciente = null;
-                paciente = RecuperarPaciente(patients);
+                var paciente = RecuperarPaciente(patients);
 
                 if (paciente == null)
                 {
@@ -623,7 +622,7 @@ namespace WebService.Controllers
                 {
                     case HttpStatusCode.OK:
                     case HttpStatusCode.NoContent:
-                        var respuesta = await response.Content.ReadAsAsync<List<respuestaMuestraMinsal>>();
+                        await response.Content.ReadAsAsync<List<respuestaMuestraMinsal>>();
                         //La fecha de actualizacion se setea solo cuando se tributa en MINSAL
                         sospechaActualizada.updated_at = sospechaActualizada.reception_at;
                         await _db.SaveChangesAsync();
@@ -920,7 +919,6 @@ namespace WebService.Controllers
             return tokenLogin;
         }
 
-
         /// <summary>
         /// Recupera los datos demográficos del paciente
         /// </summary>
@@ -928,12 +926,11 @@ namespace WebService.Controllers
         /// El parámetro de la solicitud debe ser el RUN sin digito verificador u otro
         /// identificador (Pasaporte,etc)
         /// Ejemplo de solicitud:
-        ///
+        /// 
         ///     GET /apolohra/getdemograph
         ///     "11111111"
         /// 
         /// </remarks>
-        /// <param name="buscador">RUN u otro identificador del paciente</param>
         /// <returns>Datos demográficos del paciente</returns>
         /// <response code="200">Datos demográficos del paciente</response>
         /// <response code="400">Mensaje detallado del error</response>
@@ -953,32 +950,24 @@ namespace WebService.Controllers
             }
             catch (Exception e)
             {
-                if (patients.run == null)
-                {
-                    _logger.LogError(e, "No se pudo recuperar demografico del paciente:{patients.other_identification}", patients.other_identification);
-                }
-                else
-                {
-                    _logger.LogError(e, "No se pudo recuperar demografico del paciente:{patients.run.ToString()}", patients.run.ToString());
-                }
-                return BadRequest("No se Encontro sospecha.... problema " + e);
+                _logger.LogError(
+                    e,
+                    "No se pudo recuperar demográfico del paciente:{patients}",
+                    patients.run == null? patients.other_identification: patients.run.ToString()
+                );
+
+                return BadRequest("No se encontró sospecha.... problema " + e);
             }
         }
 
         private Patients RecuperarPaciente(Patients patients)
         {
-            Patients paciente = null;
-
             if (patients.run == null)
             {
-                paciente = _db.patients.FirstOrDefault(c => c.other_identification.Equals(patients.other_identification));
+                return _db.patients.FirstOrDefault(c => c.other_identification.Equals(patients.other_identification));
             }
-            else
-            {
-                var run = patients.run;
-                paciente = _db.patients.FirstOrDefault(c => c.run.Equals(run));
-            }
-            return paciente;
+
+            return _db.patients.FirstOrDefault(c => c.run.Equals(patients.run));
         }
     }
 }
