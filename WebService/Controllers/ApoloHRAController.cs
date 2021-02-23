@@ -421,7 +421,7 @@ namespace WebService.Controllers
                         run_medic = sospecha.run_medic, //rut medico solicitante
                         symptoms = sospecha.symptoms == "Si",
                         pcr_sars_cov_2 = sospecha.pscr_sars_cov_2,
-                        sample_type = sospecha.sample_type, // tipo de muestra
+                        sample_type = sospecha.sample_type.ToUpperInvariant(), // tipo de muestra
                         epivigila = sospecha.epivigila,
                         gestation = sospecha.gestation,
                         gestation_week = sospecha.gestation_week,
@@ -500,7 +500,7 @@ namespace WebService.Controllers
                                       .new_code_deis,
                         fecha_muestra = ((DateTime)suspectCase.sample_at).ToString("dd-MM-yyyyTHH:mm:ss"),
                         tecnica_muestra = "RT-PCR",
-                        tipo_muestra = suspectCase.sample_type,
+                        tipo_muestra = sospecha.sample_type,
                         paciente_run = paciente.run?.ToString(),
                         paciente_dv = paciente.dv,
                         paciente_prevision = "FONASA",
