@@ -166,7 +166,7 @@ namespace WebService.Controllers
                 else
                     p = _db.patients.FirstOrDefault(a => a.run.Equals(int.Parse(pa.run)));
 
-                return p != null? Ok(p.id): Ok(null);
+                return p != null ? Ok(p.id) : Ok(null);
             }
             catch (Exception e)
             {
@@ -211,15 +211,8 @@ namespace WebService.Controllers
         {
             try
             {
-                var buscador = "";
                 Patients paciente = null;
-                if(patients.run == null){
-                    buscador = patients.other_identification;
-                }
-                else{
-                    buscador = patients.run.ToString();
-                }
-                 paciente = RecuperarPaciente(buscador);
+                paciente = RecuperarPaciente(patients);
 
                 if (paciente == null)
                 {
@@ -239,8 +232,8 @@ namespace WebService.Controllers
                     paciente.fathers_family = patients.fathers_family;
                     paciente.mothers_family = patients.mothers_family;
                     paciente.created_at = patients.created_at;
-               
-                    
+
+
                 }
                 paciente.updated_at = patients.updated_at;
                 paciente.birthday = patients.birthday;
@@ -477,7 +470,7 @@ namespace WebService.Controllers
                             suma += (pacienteRun[x]) * (((pacienteRunLength - x) % 6) + 2);
 
                         int numericDigito = (11 - suma % 11);
-                        string digito = numericDigito == 11? "0": numericDigito == 10? "K": numericDigito.ToString();
+                        string digito = numericDigito == 11 ? "0" : numericDigito == 10 ? "K" : numericDigito.ToString();
                         paciente.dv = digito;
                     }
 
@@ -503,7 +496,7 @@ namespace WebService.Controllers
                         paciente_comuna = comuna.code_deis,
                         paciente_direccion = (demografia.address + " - " + demografia.number),
                         paciente_telefono = demografia.telephone,
-                        paciente_sexo = paciente.gender == "male"? "M": "F",
+                        paciente_sexo = paciente.gender == "male" ? "M" : "F",
                         cod_deis = _db.establishments.Find(suspectCase.establishment_id)
                                       .new_code_deis,
                         fecha_muestra = ((DateTime)suspectCase.sample_at).ToString("dd-MM-yyyyTHH:mm:ss"),
@@ -534,15 +527,15 @@ namespace WebService.Controllers
                                                             .id_muestra;
                         await _db.SaveChangesAsync();
                         return Ok(suspectCase.id);
-                        
+
                     default:
                         //Guardar error MINSAL en BD esmeralda
                         //Caso cuando esta ok esmeralda pero MINSAL lanza un error
                         var error = await response.Content.ReadAsAsync<ErrorMinsal>();
                         suspectCase.ws_minsal_message = error.error;
-                        
+
                         await _db.SaveChangesAsync();
-                        return Ok(suspectCase.id+"@"+((error.error).Replace("\n","")).Trim());
+                        return Ok(suspectCase.id + "@" + ((error.error).Replace("\n", "")).Trim());
                 }
             }
             catch (Exception e)
@@ -618,7 +611,7 @@ namespace WebService.Controllers
                 //Se prepara el json de la recepcion con la id del Minsal
                 var recepcionesMinsal = new List<RecepcionMinsal>();
 
-                recepcionesMinsal.Add(new RecepcionMinsal {id_muestra = sospechaActualizada.minsal_ws_id});
+                recepcionesMinsal.Add(new RecepcionMinsal { id_muestra = sospechaActualizada.minsal_ws_id });
 
                 //conexion hacia el end point de Minsal
                 var httpClient = _clientFactory.CreateClient("conexionApiMinsal");
@@ -643,7 +636,7 @@ namespace WebService.Controllers
                         await _db.SaveChangesAsync();
 
                         return Ok(sospechaActualizada.id + "@" + ((error.error).Replace("\n", "")).Trim());
-                }      
+                }
             }
             catch (DbUpdateException ex)
             {
@@ -660,7 +653,7 @@ namespace WebService.Controllers
                 return BadRequest("No se guardo correctamente...." + e);
             }
         }
-    
+
 
         /// <summary>
         /// Informa la entrega del resultado de la muestra al caso de asospecha
@@ -729,7 +722,8 @@ namespace WebService.Controllers
                 //Se prepara el json del resultado
                 var resultado = new ResultadoMinsal
                 {
-                    id_muestra = sospechaActualizada.minsal_ws_id, resultado = resultadoEme
+                    id_muestra = sospechaActualizada.minsal_ws_id,
+                    resultado = resultadoEme
                 };
 
                 //Se hace un get a esmeralda para obtener el token del formulario 
@@ -949,32 +943,40 @@ namespace WebService.Controllers
         [Route("getDemograph")]
         [ProducesResponseType(typeof(demographics), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
-        public IActionResult GetDemograph([FromBody] string buscador)
+        public IActionResult GetDemograph([FromBody] Patients patients)
         {
             try
             {
-                var paciente = RecuperarPaciente(buscador);
+                var paciente = RecuperarPaciente(patients);
                 var demographic = _db.demographics.FirstOrDefault(c => c.patient_id.Equals(paciente.id));
                 return Ok(demographic);
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "No se pudo recuperar demografico del paciente:{buscador}", buscador);
+                if (patients.run == null)
+                {
+                    _logger.LogError(e, "No se pudo recuperar demografico del paciente:{patients.other_identification}", patients.other_identification);
+                }
+                else
+                {
+                    _logger.LogError(e, "No se pudo recuperar demografico del paciente:{patients.run.ToString()}", patients.run.ToString());
+                }
                 return BadRequest("No se Encontro sospecha.... problema " + e);
             }
         }
 
-        private Patients RecuperarPaciente(string buscador)
+        private Patients RecuperarPaciente(Patients patients)
         {
             Patients paciente = null;
-            try
+
+            if (patients.run == null)
             {
-                var run = int.Parse(buscador);
-                paciente = _db.patients.FirstOrDefault(c => c.run.Equals(run));
+                paciente = _db.patients.FirstOrDefault(c => c.other_identification.Equals(patients.other_identification));
             }
-            catch (Exception e)
+            else
             {
-                paciente = _db.patients.FirstOrDefault(c => c.other_identification.Equals(buscador));
+                var run = patients.run;
+                paciente = _db.patients.FirstOrDefault(c => c.run.Equals(run));
             }
             return paciente;
         }
