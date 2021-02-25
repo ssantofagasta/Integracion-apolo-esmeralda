@@ -851,6 +851,11 @@ namespace WebService.Controllers
                         epivigila = caso.epivigila,
                         gestation = caso.gestation,
                         gestation_week = caso.gestation_week,
+                        reception_at = caso.reception_at,
+                        receptor_id = caso.receptor_id,
+                        pscr_sars_cov_2 = caso.pcr_sars_cov_2,
+                        pscr_sars_cov_2_at = caso.pcr_sars_cov_2_at,
+                        validator_id = caso.validator_id,
                         observation = caso.observation
                     },
                     paciente = patient,
