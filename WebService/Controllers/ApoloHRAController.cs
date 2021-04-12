@@ -445,6 +445,8 @@ namespace WebService.Controllers
 
                 if (!laboratorio.minsal_ws) return Ok(suspectCase.id);
 
+                if (suspectCase.minsal_ws_id != null) return Ok(suspectCase.id);
+
                 //variables para obtener los datos solicitados por Minsal 
                 var pacienteId = suspectCase.patient_id;
                 var paciente = await _db.patients.FindAsync(pacienteId);
