@@ -422,7 +422,7 @@ namespace WebService.Controllers
                         symptoms = sospecha.symptoms == "Si",
                         pcr_sars_cov_2 = sospecha.pscr_sars_cov_2,
                         sample_type = sospecha.sample_type.ToUpperInvariant(), // tipo de muestra
-                        epivigila = sospecha.epivigila,
+                        epivigila = sospecha.epivigila.ToString(),
                         gestation = sospecha.gestation,
                         gestation_week = sospecha.gestation_week,
                         close_contact = sospecha.close_contact,
@@ -840,6 +840,9 @@ namespace WebService.Controllers
                 {
                     return BadRequest("No existe el demografico");
                 }
+                
+                
+                
                 object retorno = new CasoResponse
                 {
                     caso = new Sospecha
@@ -850,7 +853,7 @@ namespace WebService.Controllers
                         symptoms = caso.symptoms.HasValue ? caso.symptoms.Value ? "Si" : "No" : "No",
                         symptoms_at = caso.symptoms_at,
                         sample_type = caso.sample_type,
-                        epivigila = caso.epivigila,
+                        epivigila = caso.epivigila==null?(int?)null:int.Parse(caso.epivigila),
                         gestation = caso.gestation,
                         gestation_week = caso.gestation_week,
                         reception_at = caso.reception_at,
