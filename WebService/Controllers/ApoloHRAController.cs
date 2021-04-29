@@ -422,7 +422,7 @@ namespace WebService.Controllers
                         symptoms = sospecha.symptoms == "Si",
                         pcr_sars_cov_2 = sospecha.pscr_sars_cov_2,
                         sample_type = sospecha.sample_type.ToUpperInvariant(), // tipo de muestra
-                        epivigila = sospecha.epivigila.ToString(),
+                        epivigila = sospecha.epivigila?.ToString(),
                         gestation = sospecha.gestation,
                         gestation_week = sospecha.gestation_week,
                         close_contact = sospecha.close_contact,
@@ -486,7 +486,7 @@ namespace WebService.Controllers
                     new MuestraMinsal
                     {
                         codigo_muestra_cliente = suspectCase.id.ToString(),
-                        epivigila = suspectCase.epivigila.ToString(),
+                        epivigila = suspectCase.epivigila,
                         id_laboratorio = laboratorio.id_openagora,
                         rut_responsable = responsable.run + "-" + responsable.dv,
                         paciente_tipodoc = tipodoc,
