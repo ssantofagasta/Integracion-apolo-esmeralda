@@ -590,8 +590,6 @@ namespace WebService.Controllers
 
                 if (sospechaActualizada == null) return BadRequest("No se guardo correctamente....");
 
-                if (sospechaActualizada.minsal_ws_id == null) { return BadRequest(0); }
-
                 if (sospechaActualizada.reception_at == null)
                 {
                     sospechaActualizada.reception_at = sospecha.reception_at;
@@ -607,6 +605,8 @@ namespace WebService.Controllers
                 if (laboratorio == null) return BadRequest("Laboratorio no encontrado");
 
                 if (!laboratorio.minsal_ws) return Ok("Se Guardo correctamente...");
+
+                if (sospechaActualizada.minsal_ws_id == null) { return BadRequest(0); }
 
                 //conexion hacia el end point de Minsal
                 var httpClient = _clientFactory.CreateClient("conexionApiMinsal");
@@ -627,7 +627,7 @@ namespace WebService.Controllers
                 var muestras = await response.Content.ReadAsAsync<IList<EstadoMuestra>>();
 
                 if (muestras.Count == 0)
-                    return BadRequest($@"La muestra con id en PNTM {sospechaActualizada.minsal_ws_id} no está asociada al laboratorio");
+                    return BadRequest($"La muestra con id en PNTM {sospechaActualizada.minsal_ws_id} no está asociada al laboratorio");
 
                 var estadoMuestra = muestras.First();
                 if (estadoMuestra.estado_muestra != "2")
