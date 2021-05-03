@@ -601,7 +601,6 @@ namespace WebService.Controllers
                     await _db.SaveChangesAsync();
                 }
 
-
                 //Se obtiene el laboratorio para sacer el ACCESSKEY 
                 var laboratorio = _db.laboratories.FirstOrDefault(a => a.id == sospechaActualizada.laboratory_id);
 
@@ -609,15 +608,35 @@ namespace WebService.Controllers
 
                 if (!laboratorio.minsal_ws) return Ok("Se Guardo correctamente...");
 
-                //Se prepara el json de la recepcion con la id del Minsal
-                var recepcionesMinsal = new List<RecepcionMinsal>();
-
-                recepcionesMinsal.Add(new RecepcionMinsal { id_muestra = sospechaActualizada.minsal_ws_id });
-
                 //conexion hacia el end point de Minsal
                 var httpClient = _clientFactory.CreateClient("conexionApiMinsal");
                 httpClient.DefaultRequestHeaders.Add("ACCESSKEY", laboratorio.token_ws);
-                var response = await httpClient.PostAsJsonAsync("recepcionarMuestra", recepcionesMinsal);
+
+                var response = await httpClient.PostAsync(
+                    "datosMuestraID",
+                    new FormUrlEncodedContent(
+                        new[]
+                        {
+                            new KeyValuePair<string, string>(
+                                "parametros",
+                                JsonConvert.SerializeObject(new {id_muestra = sospechaActualizada.minsal_ws_id})
+                            )
+                        }
+                    )
+                );
+                var muestras = await response.Content.ReadAsAsync<IList<EstadoMuestra>>();
+
+                if (muestras.Count == 0)
+                    return BadRequest($@"La muestra con id en PNTM {sospechaActualizada.minsal_ws_id} no está asociada al laboratorio");
+
+                var estadoMuestra = muestras.First();
+                if (estadoMuestra.estado_muestra != "2")
+                        return Ok(sospechaActualizada.id);
+
+                //Se prepara el json de la recepcion con la id del Minsal
+                var recepcionesMinsal = new List<RecepcionMinsal>();
+                recepcionesMinsal.Add(new RecepcionMinsal { id_muestra = sospechaActualizada.minsal_ws_id });
+                response = await httpClient.PostAsJsonAsync("recepcionarMuestra", recepcionesMinsal);
 
                 //Se obtiene el status del response para guardar el retorno, ya sea la ID de muestra o el error Minsal
                 switch (response.StatusCode)
@@ -636,7 +655,7 @@ namespace WebService.Controllers
                         sospechaActualizada.ws_minsal_message = error.error;
                         await _db.SaveChangesAsync();
 
-                        return Ok(sospechaActualizada.id + "@" + ((error.error).Replace("\n", "")).Trim());
+                        return BadRequest(sospechaActualizada.id + "@" + ((error.error).Replace("\n", "")).Trim());
                 }
             }
             catch (DbUpdateException ex)
@@ -840,9 +859,7 @@ namespace WebService.Controllers
                 {
                     return BadRequest("No existe el demografico");
                 }
-                
-                
-                
+
                 object retorno = new CasoResponse
                 {
                     caso = new Sospecha

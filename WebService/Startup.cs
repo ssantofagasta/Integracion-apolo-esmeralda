@@ -137,6 +137,8 @@ namespace WebService
         {
             if (env.IsDevelopment()) app.UseDeveloperExceptionPage();
 
+            app.UseMiddleware<SerilogBodyRequestLogger>();
+            
             app.UseSerilogRequestLogging(
                 options =>
                 {
@@ -158,10 +160,21 @@ namespace WebService
             app.UseCors("CorsPolicy");
             app.UseAuthorization();
 
-            app.UseHealthChecks("/self", new HealthCheckOptions { Predicate = r => r.Name.Contains("self") });
-            app.UseHealthChecks("/ready", new HealthCheckOptions { Predicate = r => r.Tags.Contains("service") });
+            app.UseEndpoints(
+                endpoints =>
+                {
+                    endpoints.MapHealthChecks(
+                        "/self",
+                        new HealthCheckOptions {Predicate = r => r.Name.Contains("self")}
+                    );
 
-            app.UseEndpoints(endpoints => { endpoints.MapControllers(); });
+                    endpoints.MapHealthChecks(
+                        "/ready",
+                        new HealthCheckOptions {Predicate = r => r.Tags.Contains("service")}
+                    );
+                    
+                    endpoints.MapControllers();
+                } );
         }
 
         private LogEventLevel ExcludeHealthChecks(HttpContext httpContext, double _, Exception ex)
@@ -203,7 +216,7 @@ namespace WebService
             }
 
             diagnosticContext.Set("ContentType", httpContext.Response.ContentType);
-
+            
             var endpoint = httpContext.GetEndpoint();
             if (endpoint is object) // endpoint != null
             {
