@@ -126,9 +126,7 @@ namespace WebService
                 }
             );
 
-            //nuevo codigo conexion minsal 
             services.AddHttpClient("conexionApiMinsal", ConfigureClient);
-
             services.AddHttpClient("conexionEsmeralda", ConfigureClientEme);
         }
 
