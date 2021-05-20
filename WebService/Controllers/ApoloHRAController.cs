@@ -407,7 +407,7 @@ namespace WebService.Controllers
             try
             {
                 suspectCase = _db.suspect_cases.FirstOrDefault(
-                    a => a.patient_id == sospecha.patient_id && a.sample_at == sospecha.sample_at
+                    a => a.patient_id == sospecha.patient_id && a.sample_at == sospecha.sample_at && a.laboratory_id == sospecha.laboratory_id
                 );
 
                 if (suspectCase == null)
