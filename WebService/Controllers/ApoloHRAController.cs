@@ -427,6 +427,7 @@ namespace WebService.Controllers
                         gestation_week = sospecha.gestation_week,
                         close_contact = sospecha.close_contact,
                         functionary = sospecha.functionary,
+                        case_type = sospecha.busqueda_activa.HasValue?sospecha.busqueda_activa.Value?"Busqueda activa":"Atención médica":"Atención médica",
                         patient_id = sospecha.patient_id, //rut del paciente
                         establishment_id = sospecha.establishment_id,
                         user_id = sospecha.user_id,
@@ -507,7 +508,8 @@ namespace WebService.Controllers
                         paciente_dv = paciente.dv,
                         paciente_prevision = "FONASA",
                         paciente_pasaporte = paciente.other_identification,
-                        paciente_ext_paisorigen = pais.id_minsal
+                        paciente_ext_paisorigen = pais.id_minsal,
+                        busqueda_activa = sospecha.busqueda_activa.HasValue?sospecha.busqueda_activa.Value:false
                     }
                 );
 
@@ -624,6 +626,7 @@ namespace WebService.Controllers
                         }
                     )
                 );
+
                 var muestras = await response.Content.ReadAsAsync<IList<EstadoMuestra>>();
 
                 if (muestras.Count == 0)
@@ -635,7 +638,11 @@ namespace WebService.Controllers
 
                 //Se prepara el json de la recepcion con la id del Minsal
                 var recepcionesMinsal = new List<RecepcionMinsal>();
-                recepcionesMinsal.Add(new RecepcionMinsal { id_muestra = sospechaActualizada.minsal_ws_id });
+                recepcionesMinsal.Add(new RecepcionMinsal
+                {
+                    id_muestra = sospechaActualizada.minsal_ws_id,
+                    fecha_recepcion_laboratorio = sospecha.reception_at.Value.ToString("dd-MM-yyyyTHH:mm:ss")
+                });
                 response = await httpClient.PostAsJsonAsync("recepcionarMuestra", recepcionesMinsal);
 
                 //Se obtiene el status del response para guardar el retorno, ya sea la ID de muestra o el error Minsal
@@ -743,7 +750,8 @@ namespace WebService.Controllers
                 var resultado = new ResultadoMinsal
                 {
                     id_muestra = sospechaActualizada.minsal_ws_id,
-                    resultado = resultadoEme
+                    resultado = resultadoEme,
+                    fecha_hora_resultado_laboratorio = sospecha.pscr_sars_cov_2_at.Value.ToString("dd-MM-yyyyTHH:mm:ss")
                 };
 
                 //Se hace un get a esmeralda para obtener el token del formulario 

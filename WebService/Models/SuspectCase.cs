@@ -35,5 +35,6 @@ namespace WebService.Models
         public long? minsal_ws_id { get; set; }
         public string ws_minsal_message { get; set; }
         public bool? ws_pntm_mass_sending { get; set; }
+        public string case_type { get; set; }
     }
 }
