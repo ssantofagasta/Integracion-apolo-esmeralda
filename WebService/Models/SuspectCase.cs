@@ -7,6 +7,7 @@ namespace WebService.Models
     {
         [Key]
         public long? id { get; set; }
+
         public int? age { get; set; }
         public string gender { get; set; }
         public DateTime? sample_at { get; set; }
@@ -36,5 +37,6 @@ namespace WebService.Models
         public string ws_minsal_message { get; set; }
         public bool? ws_pntm_mass_sending { get; set; }
         public string case_type { get; set; }
+        public bool is_pool_testing { get; set; }
     }
 }
